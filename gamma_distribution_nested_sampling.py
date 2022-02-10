@@ -10,6 +10,7 @@ from scipy.stats import gamma
 import matplotlib.pyplot as plt
 import numpy as np
 import sys 
+from scipy.special import logsumexp
 
 nlive = 50 #NB skilling has nlive=1 in his plots for emphasis
 ndead = nlive*1000
@@ -121,6 +122,19 @@ def logX_gamma(logL, nlive, k):
     logX = logt.cumsum()
     return logX
 
+def logZ(logL,logX):
+    #Zm= 0.5*(np.exp(logL[1:ndead])+np.exp(logL[0:ndead-1]))*(np.exp(logX[1:ndead])-np.exp(logX[0:ndead-1]))
+    logsum_L=logsumexp([logL[1:],logL[:-1]],axis=0)
+    print(logsum_L)
+    logdiff_X=logsumexp([logX[1:],logX[:-1]],axis=0,b=np.array([-1,1])[:,None])
+    print(logdiff_X)
+    logQ=logsum_L+logdiff_X-np.log(2)
+    logZ=logsumexp(logQ)
+    return logZ
+
+print(logXreal)
+print("the evidence is",logZ(logL,logXreal))
+sys.exit(0)
 
 
 fig, ax = plt.subplots()
@@ -128,40 +142,41 @@ i = np.arange(ndead)+1
 logXreal1=logXreal[0:ndead]
 #logX = -i/nlive
 for _ in range(10):
-    plt.plot(logXreal1,logX_powerlaw(logL)-logXreal1,'C0-')
-
+    #plt.plot(logXreal1,logX_powerlaw(logL)-logXreal1,'C0-')
+    plt.plot(evidence(logL,logX_powerlaw(logL))-evidence(logL,logXreal1),'C0-')
+    
 k = 6
 i = np.arange(ndead-k-1)+1
 logXreal2=logXreal[0:ndead-k-1]
 #logX = -i/nlive
 for _ in range(10):
-    plt.plot(logXreal2,logX_gamma(logL,nlive,k)-logXreal2,'C1')
-
-
-k = 10
-i = np.arange(ndead-k-1)+1
-logXreal3=logXreal[0:ndead-k-1]
-#logX = -i/nlive
-for _ in range(10):
-    plt.plot(logXreal3,logX_gamma(logL,nlive,k)-logXreal3,'C2')
-
-
-k = nlive
-i = np.arange(ndead-k-1)+1
-logXreal3=logXreal[0:ndead-k-1]
-#logX = -i/nlive
-for _ in range(10):
-    plt.plot(logXreal3,logX_gamma(logL,nlive,k)-logXreal3,'C3')
-
-
-k = nlive*5
-i = np.arange(ndead-k-1)+1
-logXreal3=logXreal[0:ndead-k-1]
-#logX = -i/nlive
-for _ in range(10):
-    plt.plot(logXreal3,logX_gamma(logL,nlive,k)-logXreal3,'C4')
-
-
+    #plt.plot(logXreal2,logX_gamma(logL,nlive,k)-logXreal2,'C1')
+    plt.plot(evidence(logL,logX_gamma(logL,nlive,k))-evidence(logL,logXreal2),'C1-')
+#
+#k = 10
+#i = np.arange(ndead-k-1)+1
+#logXreal3=logXreal[0:ndead-k-1]
+##logX = -i/nlive
+#for _ in range(10):
+#    plt.plot(logXreal3,logX_gamma(logL,nlive,k)-logXreal3,'C2')
+#
+#
+#k = nlive
+#i = np.arange(ndead-k-1)+1
+#logXreal3=logXreal[0:ndead-k-1]
+##logX = -i/nlive
+#for _ in range(10):
+#    plt.plot(logXreal3,logX_gamma(logL,nlive,k)-logXreal3,'C3')
+#
+#
+#k = nlive*5
+#i = np.arange(ndead-k-1)+1
+#logXreal3=logXreal[0:ndead-k-1]
+##logX = -i/nlive
+#for _ in range(10):
+#    plt.plot(logXreal3,logX_gamma(logL,nlive,k)-logXreal3,'C4')
+#
+#
 
 sys.exit(0)
 import tqdm
