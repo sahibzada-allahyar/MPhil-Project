@@ -13,7 +13,7 @@ import sys
 from scipy.special import logsumexp
 
 nlive = 50 #NB skilling has nlive=1 in his plots for emphasis
-ndead = nlive*1000
+ndead = nlive*200
 C = 10
 sigma = 0.01
 k =nlive
@@ -118,6 +118,7 @@ def logX_gamma(logL, nlive, k):
         #theta=(logL[j+1]-logL[j])/(nlive*(logL[j+k]-logL[j]))
         #logt[j]=-gamma(a=k,scale=theta).rvs(1)
     theta = (logL[(k//2):ndead-(k//2)-1] - logL[k//2-1:ndead-(k//2)-2]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-(k)-1]))
+    theta
     logt = - theta * gamma(a=k).rvs(len(theta))
     logX = logt.cumsum()
     return logX
@@ -125,15 +126,38 @@ def logX_gamma(logL, nlive, k):
 def logZ(logL,logX):
     #Zm= 0.5*(np.exp(logL[1:ndead])+np.exp(logL[0:ndead-1]))*(np.exp(logX[1:ndead])-np.exp(logX[0:ndead-1]))
     logsum_L=logsumexp([logL[1:],logL[:-1]],axis=0)
-    print(logsum_L)
     logdiff_X=logsumexp([logX[1:],logX[:-1]],axis=0,b=np.array([-1,1])[:,None])
-    print(logdiff_X)
     logQ=logsum_L+logdiff_X-np.log(2)
     logZ=logsumexp(logQ)
     return logZ
 
 print(logXreal)
 print("the evidence is",logZ(logL,logXreal))
+
+for _ in range(10):
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axvline(logZ(logL,logXreal),color='k')
+    plt.hist([logZ(logL, logX_powerlaw(logL)) for _ in range(1000)], alpha=0.5)
+
+plt.subplots()
+
+k = 6
+for _ in range(10):
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axvline(logZ(logL,logXreal),color='k')
+    plt.hist([logZ(logL[:-k-1], logX_gamma(logL,nlive,k)) for _ in range(1000)], alpha=0.5)
+
+plt.subplots()
+
+for _ in range(10):
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axvline(logZ(logL,logXreal),color='k')
+    plt.hist([logZ(logL[:-k-1], logX_gamma(logL,nlive,k)) for _ in range(1000)], alpha=0.5)
+
+
+
+
+
 sys.exit(0)
 
 
