@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys 
 from scipy.special import logsumexp
+import anesthetic
 
-nlive =500#NB skilling has nlive=1 in his plots for emphasis
+nlive =50#NB skilling has nlive=1 in his plots for emphasis
 ndead = 10000
 C = 10
 sigma = 0.01
@@ -22,27 +23,6 @@ sigma = 0.01
 #bring this one back from dead for gaussian L
 def loglikelihood(X):
      return -X**(2/C)/(2*sigma**2)
-
-#def loglikelihood(logX):
-#     return -np.exp(logX*(2/C)/(2*sigma**2))
-
-
-#bring this one back from dead for gaussian L
-#def X(logL_):
- #   return (-2*logL_*sigma**2)**(C/2)
-  
- 
-#def loglikelihood(X):
- #   return -np.log(X)
-# 
-##gradient increasing as logX increases
-#def loglikelihood(X):
-#    return (np.log(X))**2
-
-#
-##gradient decreasing as logX increases
-#def loglikelihood(X):
-#    return 1/(np.log(X))
 
 
 def X(logL_):
@@ -59,64 +39,17 @@ def gen_ns_run(nlive, ndead):
      return logX, logL
 
 
-#fig, ax = plt.subplots()
-#for _ in range(3):
-#    _, logL = gen_ns_run(nlive,ndead)
-#    i = np.arange(ndead)+1
-#    logX = -i/nlive
-#    plt.plot(logX, np.exp(logL),'.')
-
 
 logXreal, logL = gen_ns_run(nlive,ndead)
 
-def logX_powerlaw(logL):
+def logX_powerlaw(logL,nlive):
     ndead = len(logL)
     t = powerlaw(nlive).rvs(ndead)
     logX = np.log(t).cumsum()
     return logX
 
-
-#fig, ax = plt.subplots()
-#for _ in range(10):
-#    plt.plot(logX_powerlaw(logL),np.exp(logL),'C0-')
-#
-#for _ in range(10):
-#    plt.plot(logX_gamma(logL, nlive, k),np.exp(logL[:-k-1]),'C1-')
-#
-#i = np.arange(ndead)+1
-#logX = -i/nlive
-#plt.plot(logX, np.exp(loglikelihood(np.exp(logX))),'k-')
-
-
-
-#def logX_gamma(logL, nlive, k):
-#    ndead = len(logL)
-#    logt = np.zeros(ndead-k)
-#    #for j in range(ndead-k-2):
-#        #theta=(logL[j+1]-logL[j])/(nlive*(logL[j+k]-logL[j]))
-#        #logt[j]=-gamma(a=k,scale=theta).rvs(1)
-#    theta = (logL[1:ndead-k] - logL[0:ndead-k-1]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-k-1]))
-#    logt = - theta * gamma(a=k).rvs(len(theta))
-#    logX = logt.cumsum()
-#    return logX
-
-#def logX_gamma(logL, nlive, k):
-#    ndead = len(logL)
-#    #logt = np.zeros(ndead-k)
-#    #for j in range(ndead-k-2):
-#        #theta=(logL[j+1]-logL[j])/(nlive*(logL[j+k]-logL[j]))
-#        #logt[j]=-gamma(a=k,scale=theta).rvs(1)
-#    theta = (logL[1+(k//2):ndead-(k//2)] - logL[k//2:ndead-(k//2)-1]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-(k)-1]))
-#    logt = - theta * gamma(a=k).rvs(len(theta))
-#    logX = logt.cumsum()
-#    return logX
-
 def logX_gamma(logL, nlive, k):
     ndead = len(logL)
-    #logt = np.zeros(ndead-k)
-    #for j in range(ndead-k-2):
-        #theta=(logL[j+1]-logL[j])/(nlive*(logL[j+k]-logL[j]))
-        #logt[j]=-gamma(a=k,scale=theta).rvs(1)
     theta = (logL[(k//2):ndead-(k//2)-1] - logL[k//2-1:ndead-(k//2)-2]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-(k)-1]))
     logt = - theta * gamma(a=k).rvs(len(theta))
     logX = logt.cumsum()
@@ -125,10 +58,6 @@ def logX_gamma(logL, nlive, k):
 
 def logX_gamma2(logL, nlive, k):
     ndead = len(logL)
-    #logt = np.zeros(ndead-k)
-    #for j in range(ndead-k-2):
-        #theta=(logL[j+1]-logL[j])/(nlive*(logL[j+k]-logL[j]))
-        #logt[j]=-gamma(a=k,scale=theta).rvs(1)
     theta = (logL[(k//2)+1:ndead-(k//2)] - logL[k//2:ndead-(k//2)-1]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-(k)-1]))
     logt = - theta * gamma(a=k).rvs(len(theta))
     logX = logt.cumsum()
@@ -137,32 +66,18 @@ def logX_gamma2(logL, nlive, k):
 
 def logX_gamma_append(logL, nlive, k):
     ndead = len(logL)
-    #logt = np.zeros(ndead-k)
-    #for j in range(ndead-k-2):
-        #theta=(logL[j+1]-logL[j])/(nlive*(logL[j+k]-logL[j]))
-        #logt[j]=-gamma(a=k,scale=theta).rvs(1)
-    theta = (logL[(k//2):ndead-(k//2)] - logL[k//2-1:ndead-(k//2)-1]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-(k)-1]))
-    theta
+    theta = (logL[(k//2):ndead-(k//2)] - logL[k//2-1:ndead-(k//2)-1]) / (nlive*(logL[k:ndead]-logL[0:ndead-(k)]))
     logt = - theta * gamma(a=k).rvs(len(theta))
     logXg = logt.cumsum()
-    #logX = np.concatenate((logXp[:k//2-1],logXg,logXp[ndead-(k//2)-2:]),axis=None)
-#    logX = np.concatenate((logXp[:k//2-1],logXg,logXp[ndead-(k//2)-2:]),axis=None)
-#    while logX[k//2-1]-logX[k//2-2]>0 or logX[ndead-k//2-2]-logX[ndead-k//2-3]>0:
-#        logXp = logX_powerlaw(logL)
-#        logX = np.concatenate((logXp[:k//2-1],logXg,logXp[ndead-(k//2)-2:]),axis=None)
-    t = powerlaw(nlive).rvs(k+1)
-    logXp = np.flip(np.log(t[:k//2-1]).cumsum())
-    logXp = -logXp+logXg[0]
-    logXp2 = np.log(t[k//2-1:]).cumsum()
-    logXp2= logXg[ndead-k-2]+logXp2
+    t = powerlaw(nlive).rvs(k)
+    logXp = np.log(t[:k//2]).cumsum()
+    logXg = logXp[k//2-1]+logXg
+    logXp2 = np.log(t[k//2:]).cumsum()
+    logXp2= logXg[ndead-k-1]+logXp2
     logX = np.concatenate((logXp,logXg,logXp2),axis=None)
-    #while logX[k//2-1]-logX[k//2-2]>0:
-    #    logXp = logX_powerlaw(logL)
-     #   logX = np.concatenate((logXp[:k//2-1],logXg),axis=None)
     return logX
 
 def logZ(logL,logX):
-    #Zm= 0.5*(np.exp(logL[1:ndead])+np.exp(logL[0:ndead-1]))*(np.exp(logX[1:ndead])-np.exp(logX[0:ndead-1]))
     logsum_L=logsumexp([logL[1:],logL[:-1]],axis=0)
     logdiff_X=logsumexp([logX[1:],logX[:-1]],axis=0,b=np.array([-1,1])[:,None])
     logQ=logsum_L+logdiff_X-np.log(2)
@@ -170,18 +85,80 @@ def logZ(logL,logX):
     return logZ
 
 
-#def logZ_looped(logL,logX):
-#    Z=0
-#    for i in range(ndead-1):
-#        Z=Z+0.5*(np.exp(logL[i+1])+np.exp(logL[i]))*(np.exp(logX[i])-np.exp(logX[i+1]))
-#    return np.log(Z)
-
 print(logXreal)
 print("the evidence is",logZ(logL,logXreal))
+#our program for some reason likes logZ=-37.79847
+
+
+
+colors = ["red", "blue" , "green", "orange", "purple"]
+for m in range(5):
+    logZ_all3=np.array([])
+    kval=np.array([])
+    logZ_allreal=np.array([])
+    stds=np.array([])
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axhline(logZ(logL,logXreal),color='k')
+    logZ_pl=np.ones(1000)
+    for _ in range(1000):
+        logZ_pl[_]=logZ(logL, logX_powerlaw(logL))
+    logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
+    stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
+    kval=np.concatenate((kval,1),axis=None)
+    for k in [  4, 6,  8, 10]:
+        logZ_pl=np.ones(1000)
+        for _ in range(1000):
+            logZ_pl[_]=logZ(logL, logX_gamma_append(logL,nlive,k))
+        logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
+        stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
+        kval=np.concatenate((kval,k),axis=None)
+    plt.errorbar(kval,logZ_all3,yerr=stds,color=colors[m])
+    print('k values',kval,'logZ vals',logZ_all3)
+print('error is on logZ of gamma2 run is',error_sum,'using k value as',k)
+plt.subplots()
+
+
+sys.exit(0)
+
+colors = ["red", "blue" , "green", "orange", "purple"]
+for m in range(5):
+    logZ_all3=np.array([])
+    kval=np.array([])
+    logZ_allreal=np.array([])
+    stds=np.array([])
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axhline(logZ(logL,logXreal),color='k')
+    logZ_pl=np.ones(1000)
+    for k in [  4, 6,  8, 10]:
+        logZ_pl=np.ones(1000)
+        for _ in range(1000):
+            logZ_pl[_]=logZ(logL, logX_gamma_append(logL,nlive,k))
+        logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
+        stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
+        kval=np.concatenate((kval,k),axis=None)
+    plt.errorbar(kval,logZ_all3,yerr=stds,color=colors[m])
+    logZ_all3=np.array([])
+    kval=np.array([])
+    logZ_allreal=np.array([])
+    stds=np.array([])
+    for k in [  4, 6,  8, 10]:
+        logZ_pl=np.ones(1000)
+        for _ in range(1000):
+            logZ_pl[_]=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
+        logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
+        stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
+        kval=np.concatenate((kval,k),axis=None)
+    plt.errorbar(kval,logZ_all3,yerr=stds,color='black')
+    print('k values',kval,'logZ vals',logZ_all3)
+print('error is on logZ of gamma2 run is',error_sum,'using k value as',k)
+plt.subplots()
+
+
+sys.exit(0)
 
 logZ_all=np.array([])
 logZ_allreal=np.array([])
-for _ in range(250):
+for _ in range(5):
     logXreal, logL = gen_ns_run(nlive,ndead)
     plt.axvline(logZ(logL,logXreal),color='k')
     logZ_pl=np.ones(1000)
@@ -197,73 +174,106 @@ error_sum= ((np.sum(logZ_error))**0.5)/(len(logZ_error))
 print('error is on logZ of powerlaw run is',error_sum)
 plt.subplots()
 
-#
-#
-#k=6
-#
-#logZ_all2=np.array([])
-#logZ_allreal=np.array([])
-#for _ in range(5):
-#    logXreal, logL = gen_ns_run(nlive,ndead)
-#    plt.axvline(logZ(logL,logXreal),color='k')
-#    logZ_pl=np.ones(1000)
-#    logZactual=np.ones(1000)
-#    for _ in range(1000):
-#        logZ_pl[_]=logZ(logL, logX_gamma_append(logL,nlive,k))
-#        logZactual[_]=logZ(logL,logXreal)
-#  #  print(logZ_pl)
-#    plt.hist([logZ_pl], alpha=0.5)
-#    logZ_all2=np.concatenate((logZ_all2,logZ_pl),axis=None)
-#    logZ_allreal=np.concatenate((logZ_allreal,logZactual),axis=None)
-#logZ_error= (logZ_all2-logZ_allreal)**2
-#error_sum= ((np.sum(logZ_error))**0.5)/(len(logZ_error))
-#print('error is on logZ of gamma append run is',error_sum)
-#plt.subplots()
-#
-    
-k= 6
-logZ_all3=np.array([])
-logZ_allreal=np.array([])
-for _ in range(250):
+
+
+k=6
+
+logZ_all1=np.array([])
+logZ_all2=np.array([])
+for m in range(25):
     logXreal, logL = gen_ns_run(nlive,ndead)
     plt.axvline(logZ(logL,logXreal),color='k')
-    logZ_pl=np.ones(1000)
-    logZactual=np.ones(1000)
-    for _ in range(1000):
-        logZ_pl[_]=logZ(logL[(k//(2))+1:ndead-(k//2)], logX_gamma(logL,nlive,k))
-        logZactual[_]=logZ(logL,logXreal)
-    plt.hist([logZ_pl], alpha=0.5)
-    logZ_all3=np.concatenate((logZ_all3,logZ_pl),axis=None)
-    logZ_allreal=np.concatenate((logZ_allreal,logZactual),axis=None)
-logZ_error= (logZ_all3-logZ_allreal)**2
-error_sum= ((np.sum(logZ_error))**0.5)/(len(logZ_error))
-print('error is on logZ of gamma run is',error_sum)
+    logZ_pl=np.ones(10000)
+    for _ in range(10000):
+        logZ_pl[_]=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
+    logZ_all1=np.concatenate((logZ_all1,logZ_pl),axis=None)
+    logZ_pl=np.ones(10000)
+    for _ in range(10000):
+        logZ_pl[_]=logZ(logL, logX_powerlaw(logL))
+    logZ_all2=np.concatenate((logZ_all2,logZ_pl),axis=None)
+plt.hist(logZ_all1,bins=10, alpha=0.5)
+error_sum1= np.std(logZ_all1)
+print('error is on logZ of gamma append run is',error_sum1)
+plt.hist(logZ_all2,bins=10, alpha=0.5)
+error_sum2= np.std(logZ_all2)
+print('error is on logZ of power run is',error_sum2)
 plt.subplots()
 
+plt.hist(logZ_all2,bins=25, alpha=0.5)
+plt.hist(logZ_all1,bins=25, alpha=0.5)
+plt.axvline(logZ(logL,logXreal),color='k')
 
-logZ_all3=np.array([])
-logZ_allreal=np.array([])
-for _ in range(250):
+colors = ["red", "blue" , "green", "orange", "purple"]
+for m in range(5):
+    logZ_all3=np.array([])
+    kval=np.array([])
+    logZ_allreal=np.array([])
+    stds=np.array([])
     logXreal, logL = gen_ns_run(nlive,ndead)
-    plt.axvline(logZ(logL,logXreal),color='k')
+    plt.axhline(logZ(logL,logXreal),color='k')
     logZ_pl=np.ones(1000)
-    logZactual=np.ones(1000)
     for _ in range(1000):
-        logZ_pl[_]=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
-        logZactual[_]=logZ(logL,logXreal)
-    plt.hist([logZ_pl], alpha=0.5)
-    logZ_all3=np.concatenate((logZ_all3,logZ_pl),axis=None)
-    logZ_allreal=np.concatenate((logZ_allreal,logZactual),axis=None)
-logZ_error= (logZ_all3-logZ_allreal)**2
-error_sum= ((np.sum(logZ_error))**0.5)/(len(logZ_error))
+        logZ_pl[_]=logZ(logL, logX_powerlaw(logL))
+    logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
+    stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
+    kval=np.concatenate((kval,1),axis=None)
+    for k in [4,  6,  8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34,
+           36, 38, 40, 42, 44, 46, 48, 50]:
+        logZ_pl=np.ones(1000)
+        for _ in range(1000):
+            logZ_pl[_]=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
+        logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
+        stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
+        kval=np.concatenate((kval,k),axis=None)
+    plt.errorbar(kval,logZ_all3,yerr=stds,color=colors[m])
+    print('k values',kval,'logZ vals',logZ_all3)
 print('error is on logZ of gamma2 run is',error_sum,'using k value as',k)
 plt.subplots()
 
 
+logZ_all3=np.array([])
+logZ_allreal=np.array([])
+for _ in range(1000):
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axhline(logZ(logL,logXreal),color='k')
+    logZ_pl=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
+    logZactual=logZ(logL,logXreal)
+    logZ_all3=np.concatenate((logZ_all3,logZ_pl),axis=None)
+    logZ_allreal=np.concatenate((logZ_allreal,logZactual),axis=None)
+logZ_error= (logZ_all3-logZ_allreal)**2
+error_sum= ((np.sum(logZ_error))**0.5)/(len(logZ_error))
+kmatrix=np.concatenate((kmatrix,(np.sum(logZ_all3))/len(logZ_all3)),axis=None)
 
 
 
+logZ_all3=np.array([])
+logZ_allreal=np.array([])
+for _ in range(20000):
+    logXreal, logL = gen_ns_run(nlive,ndead)
+    plt.axhline(logZ(logL,logXreal),color='k')
+    logZ_pl=logZ(logL, logX_powerlaw(logL))
+    logZ_all3=np.concatenate((logZ_all3,logZ_pl),axis=None)
+error_mat=np.array([np.std(logZ_all3)])
+kmatrix=np.array([np.mean(logZ_all3)])
 
+for k in  [4,  6,  8, 10, 12, 14, 16, 18]:
+    logZ_all3=np.array([])
+    logZ_allreal=np.array([])
+    for _ in range(20000):
+        logXreal, logL = gen_ns_run(nlive,ndead)
+        plt.axhline(logZ(logL,logXreal),color='k')
+        logZ_pl=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
+        logZactual=logZ(logL,logXreal)
+        logZ_all3=np.concatenate((logZ_all3,logZ_pl),axis=None)
+        logZ_allreal=np.concatenate((logZ_allreal,logZactual),axis=None)
+    logZ_error= (logZ_all3-logZ_allreal)**2
+    error_sum= ((np.sum(logZ_error))**0.5)/(len(logZ_error))
+    kmatrix=np.concatenate((kmatrix,(np.sum(logZ_all3))/len(logZ_all3)),axis=None)
+    error_mat= np.concatenate((error_mat,np.std(logZ_all3)),axis=None)
+    print('error is on logZ of gamma run is',error_sum)
+    print('average logZ was',(np.sum(logZ_all3))/len(logZ_all3),'for k value',k)
+plt.errorbar([ 1, 4,  6,  8, 10, 12, 14, 16],kmatrix,yerr=error_mat)
+plt.axhline(logZ(logL,logXreal),color='k')
 #k = 6
 #for _ in range(10):
 #    logXreal, logL = gen_ns_run(nlive,ndead)

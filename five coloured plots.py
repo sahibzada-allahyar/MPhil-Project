@@ -44,7 +44,7 @@ def gen_ns_run(nlive, ndead):
 
 logXreal, logL = gen_ns_run(nlive,ndead)
 
-def logX_powerlaw(logL):
+def logX_powerlaw(logL,nlive):
     ndead = len(logL)
     t = powerlaw(nlive).rvs(ndead)
     logX = np.log(t).cumsum()
@@ -68,15 +68,14 @@ def logX_gamma2(logL, nlive, k):
 
 def logX_gamma_append(logL, nlive, k):
     ndead = len(logL)
-    theta = (logL[(k//2):ndead-(k//2)-1] - logL[k//2-1:ndead-(k//2)-2]) / (nlive*(logL[k:ndead-1]-logL[0:ndead-(k)-1]))
-    theta
+    theta = (logL[(k//2):ndead-(k//2)] - logL[k//2-1:ndead-(k//2)-1]) / (nlive*(logL[k:ndead]-logL[0:ndead-(k)]))
     logt = - theta * gamma(a=k).rvs(len(theta))
     logXg = logt.cumsum()
-    t = powerlaw(nlive).rvs(k+1)
-    logXp = np.flip(np.log(t[:k//2-1]).cumsum())
-    logXp = -logXp+logXg[0]
-    logXp2 = np.log(t[k//2-1:]).cumsum()
-    logXp2= logXg[ndead-k-2]+logXp2
+    t = powerlaw(nlive).rvs(k)
+    logXp = np.log(t[:k//2]).cumsum()
+    logXg = logXp[k//2-1]+logXg
+    logXp2 = np.log(t[k//2:]).cumsum()
+    logXp2= logXg[ndead-k-1]+logXp2
     logX = np.concatenate((logXp,logXg,logXp2),axis=None)
     return logX
 
@@ -92,7 +91,7 @@ print(logXreal)
 print("the evidence is",logZ(logL,logXreal))
 #our program for some reason likes logZ=-37.79847
 
-k=1
+
 
 colors = ["red", "blue" , "green", "orange", "purple"]
 for m in range(5):
@@ -104,21 +103,19 @@ for m in range(5):
     plt.axhline(logZ(logL,logXreal),color='k')
     logZ_pl=np.ones(1000)
     for _ in range(1000):
-        logZ_pl[_]=logZ(logL, logX_powerlaw(logL))
+        logZ_pl[_]=logZ(logL, logX_powerlaw(logL,nlive))
     logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
     stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
     kval=np.concatenate((kval,1),axis=None)
-    for k in [ 6,  8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34,
-           36, 38, 40, 42, 44, 46, 48, 50]:
+    for k in [  4, 6,  8, 10]:
         logZ_pl=np.ones(1000)
         for _ in range(1000):
-            logZ_pl[_]=logZ(logL[(k//(2))-1:ndead-(k//2)-2], logX_gamma(logL,nlive,k))
+            logZ_pl[_]=logZ(logL, logX_gamma_append(logL,nlive,k))
         logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
         stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
         kval=np.concatenate((kval,k),axis=None)
     plt.errorbar(kval,logZ_all3,yerr=stds,color=colors[m])
     print('k values',kval,'logZ vals',logZ_all3)
+print('error is on logZ of gamma2 run is',error_sum,'using k value as',k)
 plt.subplots()
 
-
-sys.exit(0)
