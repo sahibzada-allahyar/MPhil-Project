@@ -15,7 +15,7 @@ import anesthetic
 import numpy.polynomial.polynomial as poly
 
 nlive =1000#NB skilling has nlive=1 in his plots for emphasis
-ndead = 200000
+ndead = 100000
 C = 10
 sigma = 0.01
 #k =nlive
@@ -79,23 +79,10 @@ def logX_gamma_append(logL, nlive, k):
     return logX
 
 
-# def logX_gamma_append2(logL, nlive, k):
-#     ndead = len(logL)
-#     theta = (logL[k+1:-k] - logL[k:-k-1]) / (nlive*(logL[2*k+1:]-logL[0:-2*k-1]))
-#     logt = - theta * gamma(a=2*k+1).rvs(len(theta))
-#     logXg = logt.cumsum()
-#     t = powerlaw(nlive).rvs(2*k+1)
-#     logXp = np.log(t[:k+1]).cumsum()
-#     logXg = logXp[k]+logXg
-#     logXp2 = np.log(t[k+1:]).cumsum()
-#     logXp2= logXg[ndead-2*k-2]+logXp2
-#     logX = np.concatenate((logXp,logXg,logXp2),axis=None)
-#     return logX
-
 def logX_gamma_append2(logL, nlive, k):
     ndead = len(logL)
-    theta = (logL[k+1:-k] - logL[k:-k-1]) / (nlive*(logL[2*k+1:]-logL[k+1:-k] + logL[k:-k-1]-logL[0:-2*k-1]))
-    logt = - theta * gamma(a=2*k).rvs(len(theta))
+    theta = (logL[k+1:-k] - logL[k:-k-1]) / (nlive*(logL[2*k+1:]-logL[0:-2*k-1]))
+    logt = - theta * gamma(a=2*k+1).rvs(len(theta))
     logXg = logt.cumsum()
     t = powerlaw(nlive).rvs(2*k+1)
     logXp = np.log(t[:k+1]).cumsum()
@@ -106,6 +93,96 @@ def logX_gamma_append2(logL, nlive, k):
     return logX
 
 
+
+def logX_gamma_rolling(logL, nlive, k):
+    ndead = len(logL)
+    logXpl1= logX_powerlaw(logL, nlive)
+    logXpl2= logX_powerlaw(logL, nlive)
+    logXpl3= logX_powerlaw(logL, nlive)
+    logXpl4= logX_powerlaw(logL, nlive)
+    logXpl5= logX_powerlaw(logL, nlive)
+    logXpl6= logX_powerlaw(logL, nlive)
+    logXpl7= logX_powerlaw(logL, nlive)
+    logXpl8= logX_powerlaw(logL, nlive)
+    logXpl9= logX_powerlaw(logL, nlive)
+    logXpl10= logX_powerlaw(logL, nlive)
+    logXpl11= logX_powerlaw(logL, nlive)
+    logXpl12= logX_powerlaw(logL, nlive)
+    logXpl13= logX_powerlaw(logL, nlive)
+    logXpl14= logX_powerlaw(logL, nlive)
+    logXpl15= logX_powerlaw(logL, nlive)
+    logXpl16= logX_powerlaw(logL, nlive)
+    logXpl17= logX_powerlaw(logL, nlive)
+    logXpl18= logX_powerlaw(logL, nlive)
+    logXpl19= logX_powerlaw(logL, nlive)
+    logXpl20= logX_powerlaw(logL, nlive)
+    logXpl21= logX_powerlaw(logL, nlive)
+    logXpl22= logX_powerlaw(logL, nlive)
+    logXpl23= logX_powerlaw(logL, nlive)
+    logXpl24= logX_powerlaw(logL, nlive)
+    logXpl25= logX_powerlaw(logL, nlive)
+    logXpl26= logX_powerlaw(logL, nlive)
+    ol=(logXpl1+logXpl2+logXpl3+logXpl4+logXpl5+logXpl6+logXpl7+logXpl8+logXpl9+logXpl10+logXpl11+logXpl12+logXpl13+logXpl14+logXpl15+logXpl16+logXpl17+logXpl18+logXpl19 +logXpl20 +logXpl21 +logXpl22 +logXpl23 +logXpl24 +logXpl25 +logXpl26 )
+    ol= ol/26
+    cumsumg=(-(2*k+1) / (nlive*(logL[2*k+1:]-logL[0:-2*k-1]))).cumsum()
+    b=2*k
+    rollingsumg= np.concatenate((cumsumg[b]/(b+1),(cumsumg[b+1:]-cumsumg[:-b-1])/(b+1)),axis=None)
+    g= -np.exp(-(2*ol)/C)*(C*sigma**2)
+    # plt.plot(g[k+1+b//2:len(ol)-b//2-k],ol[k+1+b//2:len(ol)-b//2-k])
+    # plt.plot(rollingsumg,ol[k+1+b//2:len(ol)-b//2-k])
+    theta = (logL[k+1+b//2:-b//2-k] - logL[k+b//2:-b//2-k-1])*rollingsumg/(2*k+1)
+    logt = theta * gamma(a=2*k+1).rvs(len(theta))
+    logXg = logt.cumsum()
+    t = powerlaw(nlive).rvs(2*k+1+b)
+    logXp = np.log(t[:k+1+b//2]).cumsum()
+    logXg = logXp[k+b//2]+logXg
+    logXp2 = np.log(t[k+1+b//2:]).cumsum()
+    logXp2= logXg[ndead-2*k-2-b]+logXp2
+    logX = np.concatenate((logXp,logXg,logXp2),axis=None)
+    return logX
+
+
+
+
+# def logX_gamma_append2(logL, nlive, k):
+#     ndead = len(logL)
+#     theta = (logL[k+1:-k] - logL[k:-k-1]) / (nlive*(logL[2*k+1:]-logL[k+1:-k] + logL[k:-k-1]-logL[0:-2*k-1]))
+#     logt = - theta * gamma(a=2*k).rvs(len(theta))
+#     logXg = logt.cumsum()
+#     t = powerlaw(nlive).rvs(2*k+1)
+#     logXp = np.log(t[:k+1]).cumsum()
+#     logXg = logXp[k]+logXg
+#     logXp2 = np.log(t[k+1:]).cumsum()
+#     logXp2= logXg[ndead-2*k-2]+logXp2
+#     logX = np.concatenate((logXp,logXg,logXp2),axis=None)
+#     return logX
+
+
+
+# def logX_gamma_append3(logL, nlive, k):
+#     ndead = len(logL)
+#     logt = - ((logL[k+1:-k] - logL[k:-k-1])*(2*k)) / (nlive*(logL[2*k+1:]-logL[k+1:-k] + logL[k:-k-1]-logL[0:-2*k-1]))
+#     logXg = logt.cumsum()
+#     t = powerlaw(nlive).rvs(2*k+1)
+#     logXp = np.log(t[:k+1]).cumsum()
+#     logXg = logXp[k]+logXg
+#     logXp2 = np.log(t[k+1:]).cumsum()
+#     logXp2= logXg[ndead-2*k-2]+logXp2
+#     logX = np.concatenate((logXp,logXg,logXp2),axis=None)
+#     return logX
+
+
+# def logX_gamma_append3(logL, nlive, k):
+#     ndead = len(logL)
+#     logt = - ((logL[(k//2):ndead-(k//2)] - logL[k//2-1:ndead-(k//2)-1])*k) / (nlive*(logL[k:ndead]-logL[0:ndead-(k)]))
+#     logXg = logt.cumsum()
+#     t = powerlaw(nlive).rvs(k)
+#     logXp = np.log(t[:k//2]).cumsum()
+#     logXg = logXp[k//2-1]+logXg
+#     logXp2 = np.log(t[k//2:]).cumsum()
+#     logXp2= logXg[ndead-k-1]+logXp2
+#     logX = np.concatenate((logXp,logXg,logXp2),axis=None)
+#     return logX
 
 
 def fitting_run(logL,degree,nlive):
@@ -157,18 +234,70 @@ def logZ(logL,logX):
     logZ=logsumexp(logQ)
     return logZ
 
-
-print(logXreal)
+k=30
 print("the evidence is",logZ(logL,logXreal))
+print("the evidence is",logZ(logL,logX_gamma_rolling(logL, nlive, k)))
 #our program for some reason likes logZ=-37.79847
 
 
 sys.exit(0)
 
 
+k=500
+logXreal, logL = gen_ns_run(nlive,ndead)
+
+
+
+
+k=100
+logXpl1= logX_powerlaw(logL, nlive)
+logXpl2= logX_powerlaw(logL, nlive)
+logXpl3= logX_powerlaw(logL, nlive)
+logXpl4= logX_powerlaw(logL, nlive)
+logXpl5= logX_powerlaw(logL, nlive)
+logXpl6= logX_powerlaw(logL, nlive)
+logXpl7= logX_powerlaw(logL, nlive)
+logXpl8= logX_powerlaw(logL, nlive)
+logXpl9= logX_powerlaw(logL, nlive)
+logXpl10= logX_powerlaw(logL, nlive)
+logXpl11= logX_powerlaw(logL, nlive)
+logXpl12= logX_powerlaw(logL, nlive)
+logXpl13= logX_powerlaw(logL, nlive)
+logXpl14= logX_powerlaw(logL, nlive)
+logXpl15= logX_powerlaw(logL, nlive)
+logXpl16= logX_powerlaw(logL, nlive)
+logXpl17= logX_powerlaw(logL, nlive)
+logXpl18= logX_powerlaw(logL, nlive)
+logXpl19= logX_powerlaw(logL, nlive)
+logXpl20= logX_powerlaw(logL, nlive)
+logXpl21= logX_powerlaw(logL, nlive)
+logXpl22= logX_powerlaw(logL, nlive)
+logXpl23= logX_powerlaw(logL, nlive)
+logXpl24= logX_powerlaw(logL, nlive)
+logXpl25= logX_powerlaw(logL, nlive)
+logXpl26= logX_powerlaw(logL, nlive)
+ol=(logXpl1+logXpl2+logXpl3+logXpl4+logXpl5+logXpl6+logXpl7+logXpl8+logXpl9+logXpl10+logXpl11+logXpl12+logXpl13+logXpl14+logXpl15+logXpl16+logXpl17+logXpl18+logXpl19 +logXpl20 +logXpl21 +logXpl22 +logXpl23 +logXpl24 +logXpl25 +logXpl26 )
+ol= ol/26
+cumsumg=(-(2*k) / (nlive*(logL[2*k+1:]-logL[k+1:-k] + logL[k:-k-1]-logL[0:-2*k-1]))).cumsum()
+rollingsumg= (cumsumg[k:]-cumsumg[:-k])/(k+1)
+g= -np.exp(-(2*ol)/C)*(C*sigma**2)
+plt.plot(g[k+1+k//2:len(ol)-k//2-k],ol[k+1+k//2:len(ol)-k//2-k])
+plt.plot(rollingsumg,ol[k+1+k//2:len(ol)-k//2-k])
+plt.plot((-(2*k) / (nlive*(logL[2*k+1:]-logL[k+1:-k] + logL[k:-k-1]-logL[0:-2*k-1]))),ol[k+1:-k])
+
+
+
+f=np.ones(1000)
+f2=np.ones(1000)
+for _ in range(1000):
+    f[_]=-(2*k) / (nlive*(logL[2*k+1:]-logL[k+1:-k] + logL[k:-k-1]-logL[0:-2*k-1]))
+    f2[_]=-(2*k+1) / (nlive*(logL[2*k+1:]-logL[0:-2*k-1]))
+
+
+
 
 colors = ["red", "blue" , "green", "orange", "purple","red", "blue" , "green", "orange", "purple","red", "blue" , "green", "orange", "purple"]
-for m in range(10):
+for m in range(5):
     logZ_all3=np.array([])
     kval=np.array([])
     logZ_allreal=np.array([])
@@ -181,17 +310,16 @@ for m in range(10):
     logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
     stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
     kval=np.concatenate((kval,1),axis=None)
-    for k in [ 40,80,120,150,200]:
+    for k in [5,10,20,50,100,150,200,300,400]:
         logZ_pl=np.ones(100)
         for _ in range(100):
-            logZ_pl[_]=logZ(logL, logX_gamma_append2(logL,nlive,k))
+            logZ_pl[_]=logZ(logL, logX_gamma_rolling(logL,nlive,k))
         logZ_all3=np.concatenate((logZ_all3,np.mean(logZ_pl)),axis=None)
         stds= np.concatenate((stds,np.std(logZ_pl)),axis=None)
         kval=np.concatenate((kval,k),axis=None)
     plt.errorbar(kval,logZ_all3,yerr=stds,color=colors[m])
     print('k values',kval,'logZ vals',logZ_all3)
 plt.subplots()
-
 
 colors = ["red", "blue" , "green", "orange", "purple"]
 for m in range(1):

@@ -157,4 +157,5 @@ planck = NestedSamples(root='./data.1908.09139/klcdm/chains/planck_lensing', lab
 
 logL = planck.logL.to_numpy()
 nlive = planck.nlive.to_numpy()
-
+    
+    plt.plot(logL,logX_powerlaw(nlive))
