@@ -19,7 +19,7 @@ ndead = 100000
 C = 10
 sigma = 0.01
 #k =nlive
-
+k=100
 
 #bring this one back from dead for gaussian L
 def loglikelihood(X):
@@ -125,7 +125,7 @@ def logX_gamma_rolling(logL, nlive, k):
     ol=(logXpl1+logXpl2+logXpl3+logXpl4+logXpl5+logXpl6+logXpl7+logXpl8+logXpl9+logXpl10+logXpl11+logXpl12+logXpl13+logXpl14+logXpl15+logXpl16+logXpl17+logXpl18+logXpl19 +logXpl20 +logXpl21 +logXpl22 +logXpl23 +logXpl24 +logXpl25 +logXpl26 )
     ol= ol/26
     cumsumg=(-(2*k+1) / (nlive*(logL[2*k+1:]-logL[0:-2*k-1]))).cumsum()
-    b=2*k
+    b=6*k
     rollingsumg= np.concatenate((cumsumg[b]/(b+1),(cumsumg[b+1:]-cumsumg[:-b-1])/(b+1)),axis=None)
     g= -np.exp(-(2*ol)/C)*(C*sigma**2)
     # plt.plot(g[k+1+b//2:len(ol)-b//2-k],ol[k+1+b//2:len(ol)-b//2-k])
