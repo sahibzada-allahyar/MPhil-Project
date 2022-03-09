@@ -18,34 +18,40 @@ ndims = 2
 columns = ['x%i' % i for i in range(ndims)]
 tex = {p: '$x_%i$' % i  for i, p in enumerate(columns)}
 
+#np.random.seed(0)
 
-np.random.seed(0)
 
 m_true = 1
 c_true = 0.5
 sigma = 0.1
-N = 100
+N = 10000
 
-def f(x, theta):
+def f(data_w_noise, theta):
      m, c = theta
-     return m * x + c
+     x = data_w_noise[:,0]
+     noise = data_w_noise[:,1]
+     return m * x + c + noise
 
 data_x = np.random.uniform(-1, 1, N)
 noise = np.random.randn(N)*sigma
-data_y = f(data_x, [m_true, c_true]) + noise
+data_noise= np.vstack((data_x,noise)).T
+data_y = f(data_noise, [m_true, c_true])
 
 def loglikelihood(theta):
-     m, c = theta
-     y = m * data_x + c
-     logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y - y)**2/2/sigma**2).sum()
-     return logL
+      m, c = theta
+      y = m * data_x + c
+      logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y - y)**2/2/sigma**2).sum()
+      return logL
 
 
-def nondet_loglikelihood(theta):
-    data_y = f(np.random.choice(data_x,replace=False), [m_true, c_true]) + noise 
+def loglikelihood(theta):
+    number_of_rows= data_noise.shape[0]
+    random_indices= np.random.choice(number_of_rows,size=N//10,replace=False)
+    random_rows = data_noise[random_indices, :]
     m, c = theta
-    y = m * data_x + c
-    logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y - y)**2/2/sigma**2).sum()
+    data_y_sub = f(random_rows, [m, c])
+    y = m * random_rows[:,0] + c
+    logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y_sub - y)**2/2/sigma**2).sum()
     return logL
 
 
@@ -68,9 +74,10 @@ def ns_sim_mh(ndims=2, nlive=125,num_repeats=10):
         birth_likes.append(live_birth_likes[i])
         live_birth_likes[i] = Lmin
         for gg in range(num_repeats):
-            live_point = live_points[i]+np.random.multivariate_normal(mean=np.zeros(len(live_points[0])), cov=np.cov(live_points.T)/2)
-            while loglikelihood(live_point) <= Lmin:
+            while True:
                 live_point = live_points[i]+np.random.multivariate_normal(mean=np.zeros(len(live_points[0])), cov=np.cov(live_points.T)/2)
+                if loglikelihood(live_point) > Lmin:
+                    break
             live_points[i, :] = live_point
             live_likes[i] = loglikelihood(live_points[i])
     return np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
@@ -101,14 +108,14 @@ def ns_sim(ndims=2, nlive=125):
     return np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
 
 
-
-data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh()
+sys.exit(0)
+data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh(ndims=ndims)
 
 MHns2 = NestedSamples(data=data, columns=columns, logL=logL, logL_birth=logL_birth, tex=tex)
 live_MHns2 = NestedSamples(data=live, columns=columns, logL=live_logL, logL_birth=live_logL_birth, tex=tex)
 MHns2.plot_2d(['x0','x1'])
 
-data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim()
+data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim(ndims=ndims)
 
 ns2 = NestedSamples(data=data, columns=columns, logL=logL, logL_birth=logL_birth, tex=tex)
 live_ns2 = NestedSamples(data=live, columns=columns, logL=live_logL, logL_birth=live_logL_birth, tex=tex)
