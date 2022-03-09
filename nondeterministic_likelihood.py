@@ -108,7 +108,6 @@ def ns_sim(ndims=2, nlive=125):
     return np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
 
 
-sys.exit(0)
 data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh(ndims=ndims)
 
 MHns2 = NestedSamples(data=data, columns=columns, logL=logL, logL_birth=logL_birth, tex=tex)
