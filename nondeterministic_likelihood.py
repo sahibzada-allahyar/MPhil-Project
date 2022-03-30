@@ -13,14 +13,15 @@ import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 import sys
 from scipy.stats import powerlaw
+from scipy.special import logsumexp
 
 ndims = 2
 columns = ['x%i' % i for i in range(ndims)]
 tex = {p: '$x_%i$' % i  for i, p in enumerate(columns)}
 
-#np.random.seed(0)
+np.random.seed(0)
 
-
+nlive=125
 m_true = 1
 c_true = 0.5
 sigma = 0.1
@@ -136,21 +137,39 @@ def weights(nlive=125,ndead=1376):
    logX = np.log(t).cumsum()
    X = np.concatenate((1,np.exp(logX)),axis=None)
    w = 0.5*(X[0:-2]-X[2:])
-   return -np.log(w)
+   return w
     
+def logX_powerlaw(logL,nlive):
+    ndead = len(logL)
+    t = powerlaw(nlive).rvs(ndead)
+    logX = np.log(t).cumsum()
+    return logX
 
 
-data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh(sub=10,ndims=ndims,logL=nondet_loglikelihood)
+def logZ(logL,logX):
+    logsum_L=logsumexp([logL[1:],logL[:-1]],axis=0)
+    logdiff_X=logsumexp([logX[1:],logX[:-1]],axis=0,b=np.array([-1,1])[:,None])
+    logQ=logsum_L+logdiff_X-np.log(2)
+    logZ=logsumexp(logQ)
+    return logZ
+
+def logp(logL,logX_):
+    logX = np.concatenate((0,logX_,-np.inf),axis=None)
+    logdiff_X=logsumexp([logX[2:],logX[:-2]],axis=0,b=np.array([-1,1])[:,None])
+    logp=logL+logdiff_X-np.log(2)
+    return logp-logsumexp(logp)
+
+
+data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim(ndims=ndims,logL=nondet_loglikelihood)
 
 MHns2 = NestedSamples(data=data, columns=columns, logL=logL, logL_birth=logL_birth, tex=tex)
 live_MHns2 = NestedSamples(data=live, columns=columns, logL=live_logL, logL_birth=live_logL_birth, tex=tex)
 fig, ax = MHns2.plot_2d(['x0','x1'],label='Non-deterministic N=10')
 
 
-
 ################################
 
-data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh(sub=10,ndims=ndims,logL=loglikelihood)
+data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim(ndims=ndims,logL=loglikelihood)
 
 MHns3 = NestedSamples(data=data, columns=columns, logL=logL, logL_birth=logL_birth, tex=tex)
 live_MHns2 = NestedSamples(data=live, columns=columns, logL=live_logL, logL_birth=live_logL_birth, tex=tex)
@@ -166,7 +185,7 @@ data_x = np.random.uniform(-1, 1, N)
 data_y = f(data_x, [m_true, c_true]) + np.random.randn(N)*sigma
 
 
-data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh(sub=10,ndims=ndims,logL=loglikelihood)
+data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim(ndims=ndims,logL=loglikelihood)
 
 MHns4 = NestedSamples(data=data, columns=columns, logL=logL, logL_birth=logL_birth, tex=tex)
 live_MHns2 = NestedSamples(data=live, columns=columns, logL=live_logL, logL_birth=live_logL_birth, tex=tex)
@@ -178,7 +197,11 @@ MHns4.plot_2d(axes= ax,alpha = 0.5,label='Deterministic N=10')
 
 weights = weights()
 
-data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim_mh(sub=10,ndims=ndims,logL=nondet_loglikelihood)
+data, logL, logL_birth, live, live_logL, live_logL_birth = ns_sim(ndims=ndims,logL=nondet_loglikelihood)
+
+
+
+weights=np.exp(logp(logL,logX_powerlaw(logL,nlive)))
 
 MCMC = MCMCSamples(data=data, columns=columns, logL=logL, weights=weights, tex=tex)
 live_MHns2 = NestedSamples(data=live, columns=columns, logL=live_logL, logL_birth=live_logL_birth, tex=tex)

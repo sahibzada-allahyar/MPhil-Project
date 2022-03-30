@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 11 16:19:45 2022
+Created on Thu Mar 24 20:23:50 2022
 
 @author: sahibzadaallahyar
 """
@@ -18,8 +18,33 @@ from scipy.special import logsumexp
 
 
 
-class MetropolisNS():
-    def __init__(self,loglikelihood,prior_bounds, ndims=2, nlive=125, num_repeats=10):
+# def ns_sim(logL,ndims=2, nlive=125):
+#     """Brute force Nested Sampling run"""
+#     low=(0,0)
+#     high=(2,1)
+#     live_points = np.random.uniform(low=low, high=high, size=(nlive, ndims))
+#     live_likes = np.array([logL(x) for x in live_points])
+#     live_birth_likes = np.ones(nlive) * -np.inf
+
+#     dead_points = []
+#     dead_likes = []
+#     birth_likes = []
+#     for _ in tqdm.tqdm(range(nlive*11)):
+#         i = np.argmin(live_likes)
+#         Lmin = live_likes[i]
+#         dead_points.append(live_points[i].copy())
+#         dead_likes.append(live_likes[i])
+#         birth_likes.append(live_birth_likes[i])
+#         live_birth_likes[i] = Lmin
+#         while live_likes[i] <= Lmin:
+#             live_points[i, :] = np.random.uniform(low=low, high=high, size=ndims) 
+#             live_likes[i] = logL(live_points[i])
+#     return np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
+
+
+
+class MetropolisNS2():
+    def __init__(self,loglikelihood,sigma,prior_bounds, ndims=2, nlive=125, num_repeats=10):
         """Metropolis Hastings Nested Sampling run"""
         self.ndims = ndims
         self.columns = ['x%i' % i for i in range(ndims)]
@@ -44,10 +69,20 @@ class MetropolisNS():
             for gg in range(num_repeats):
                 while True:
                     live_point = live_points[i]+np.random.multivariate_normal(mean=np.zeros(len(live_points[0])), cov=np.cov(live_points.T)/2)
-                    if loglikelihood(live_point) > Lmin:
+                    if loglikelihood(live_point) > Lmin and np.all([live_point>low,live_point<high]):
                         break
                 live_points[i, :] = live_point
                 live_likes[i] = loglikelihood(live_points[i])
+        # for _ in tqdm.tqdm(range(nlive*11)):
+        #     i = np.argmin(live_likes)
+        #     Lmin = live_likes[i]
+        #     dead_points.append(live_points[i].copy())
+        #     dead_likes.append(live_likes[i])
+        #     birth_likes.append(live_birth_likes[i])
+        #     live_birth_likes[i] = Lmin
+        #     while live_likes[i] <= Lmin:
+        #         live_points[i, :] = np.random.uniform(low=low, high=high, size=ndims) 
+        #         live_likes[i] = loglikelihood(live_points[i])
         self.data, self.logL, self.logL_birth, self.live, self.live_logL, self.live_logL_birth =  np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
         self.weights=np.exp(self.logp(self.logL,self.logX_powerlaw(self.logL,self.nlive)))
         self.MCMC = MCMCSamples(data=self.data, columns=self.columns, logL=self.logL, weights=self.weights, tex=self.tex)
@@ -91,7 +126,7 @@ class MetropolisNS():
     def MCMCstd(self):
         return self.MCMC['x0'].std()
         
-
+    
 
 class NS():
     def __init__(self,loglikelihood,sigma,prior_bounds, ndims=2, nlive=125, num_repeats=10):
@@ -164,6 +199,7 @@ class NS():
         
 
 
+
 # m_true = 1
 # c_true = 0.5
 # sigma = 0.1
@@ -190,12 +226,12 @@ class NS():
 sigma=0.1
 def loglikelihood(x):
     mean = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-    cov = np.array([[0.1, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.1, 0.0,  0.0, 0.0, 0.0], [0.0, 0.0, 0.1, 0.0, 0.0, 0.0],[ 0.0, 0.0, 0.0, 0.1,0.0,0.0],[0.0, 0.0, 0.0, 0.0, 0.1,0.0],[0.0, 0.0, 0.0, 0.0, 0.0,0.1]])
+    cov = np.array([[0.01, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.01, 0.0, 0.0, 0.0, 0.0 ], [0.0, 0.0, 0.01, 0.0, 0.0, 0.0],[ 0.0, 0.0, 0.0, 0.01,0.0,0.0],[0.0, 0.0, 0.0, 0.0, 0.01,0.0],[0.0, 0.0, 0.0, 0.0, 0.0,0.01]])
     logL = multivariate_normal.logpdf(x, mean=mean, cov=cov) + np.random.rand()*sigma_
     return logL
 
 sigma_= 0
-mh= MetropolisNS(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6)
+mh= MetropolisNS2(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6,sigma=sigma_)
 fig,axs=mh.MCMC2d(parameters=['x0','x1'],label_='deterministic')
 
 
@@ -204,7 +240,7 @@ fig,axs=mh.MCMC2d(parameters=['x0','x1'],label_='deterministic')
 sigma_= 0.1
 for x in [25,200,1000]:    
     sigma_= sigma*x
-    mh= MetropolisNS(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6)
+    mh= MetropolisNS2(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6,sigma=sigma_)
     mh.MCMC2d(parameters=axs,label_='non-deterministic with std error='+str(sigma_))
 
     
@@ -223,16 +259,16 @@ fig.tight_layout()
 
 
 # sigma_= 0
-# mh= MetropolisNS(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6)
+# mh= MetropolisNS2(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6,sigma=sigma_)
 # std= np.array([mh.MCMCstd()])
 # print(std)
 
 
 # sigma_= 0.1
-# for x in [25,200,1000,2000,5000]:    
+# for x in [5,25,50,100,200,300,600,900,1000,2000,5000]:    
 #     sigma_= sigma*x
-#     mh= MetropolisNS(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6)
+#     mh= MetropolisNS2(loglikelihood=loglikelihood,prior_bounds=[[0,0,0,0,0,0],[1,1,1,1,1,1]],ndims=6,sigma=sigma_)
 #     std= np.concatenate((std,mh.MCMCstd()),axis=None)
-# plt.plot([0,2.5,20,100,200,1000],std)
+# plt.plot([0,0.5,2.5,5,10,20,30,60,90,100,200,500],std)
 
 
