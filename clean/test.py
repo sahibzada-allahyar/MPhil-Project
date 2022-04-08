@@ -8,7 +8,7 @@ import pandas as pd
 def loglikelihood(x):
     mean = np.array([0.5, 0.5])
     cov = np.array([[0.01, 0.0], [0.0, 0.01 ]])
-    logL = multivariate_normal.logpdf(x, mean=mean, cov=cov) + np.random.rand()*sigma_
+    logL = multivariate_normal.logpdf(x, mean=mean, cov=cov) + np.random.normal(0,sigma_)
     prob = np.random.rand()
     if prob>0.99999: 
         print('loglikelihood is using sigma_ as'+str(sigma_))
@@ -19,25 +19,25 @@ def gaussian(x, mu, sig):
     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))/(sig*np.sqrt(2*np.pi))
 
 
-sigma_ = 0.25
-mh1= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,tol=1)
+# sigma_ = 0
+# mh1= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,tol=1e-30)
 
-fig,axs=mh1.MCMC2d(parameters=['x0','x1'],label_='deterministic orthodox')
+# fig,axs=mh1.MCMC2d(parameters=['x0','x1'],label_='deterministic orthodox')
 
-sigma_=0.25
+# sigma_=0.25
 
-for sigma_ in [0.25,20.0,100.0]:    
-    mh_err= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,tol=1e-25)
-    mh_err.MCMC2d(parameters=axs,label_='non-deterministic with std error='+str(sigma_))
-
-
-handles, labels = axs['x0']['x0'].get_legend_handles_labels()
-leg = fig.legend(handles, labels)
-fig.tight_layout()
-plt.show()
+# for sigma_ in [0.25,20.0,100.0]:    
+#     mh_err= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,tol=1e-35)
+#     mh_err.MCMC2d(parameters=axs,label_='non-deterministic with std error='+str(sigma_))
 
 
-plt.figure(0)
+# handles, labels = axs['x0']['x0'].get_legend_handles_labels()
+# leg = fig.legend(handles, labels)
+# fig.tight_layout()
+# plt.show()
+
+
+# plt.figure(0)
 # x = np.linspace(0,1,3000)
   
 # mean = 0.5, 
@@ -79,15 +79,6 @@ for sigma_ in [0.25,20.0,100.0]:
 # sigg = 0.1
 # y = gaussian(x, mu=mean, sig=sigg)
 
-# # df = pd.DataFrame({
-# #     'x_vals':x_
-# # })
-# # df['Actual Gaussian']=y
-
-# # df.plot(x=x_,y='Actual Gaussian',ax=axs['x0']['x0'],color='purple')
-
-# # df.plot(x=x_,y='Actual Gaussian',ax=axs['x1']['x1'],color='purple')
-
 # axs['x0']['x0'].plot(x,y,color='purple')
     
 
@@ -108,3 +99,19 @@ plt.figure(0)
 # plt.hist(mh2.logZ_int(200),label= 'MCMC',alpha=0.5)
 
 # plt.legend(loc="upper left")
+
+
+
+
+
+
+
+
+# # df = pd.DataFrame({
+# #     'x_vals':x_
+# # })
+# # df['Actual Gaussian']=y
+
+# # df.plot(x=x_,y='Actual Gaussian',ax=axs['x0']['x0'],color='purple')
+
+# # df.plot(x=x_,y='Actual Gaussian',ax=axs['x1']['x1'],color='purple')

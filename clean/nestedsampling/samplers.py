@@ -18,6 +18,7 @@ class NSrun():
         self.loglikelihood=loglikelihood
         self.tolerance_breaks=0
         self.tol= tol
+        self.logZ_tester=0
         print('tolerance chosen as'+str(self.tol))
         low= prior_bounds[0]
         high=prior_bounds[1]
@@ -44,8 +45,11 @@ class NSrun():
                             break
                     wandering_point = live_point
                 """Below we check if breaking criterion is met"""
-                if _>10:
+                if _>=1:
                     self.logL = np.array(dead_likes)
+                    self.logX_powerlaw()
+                    self.frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
+                    self.logZ_tester += self.frac
                     cond = self.breaking_criterion()
                     if cond:
                         print(cond)
@@ -65,8 +69,11 @@ class NSrun():
                     live_points[i, :] = np.random.uniform(low=low, high=high, size=ndims) 
                     live_likes[i] = self.loglikelihood(live_points[i])
                 """Below we check if breaking criterion is met"""
-                if _>10:
+                if _>=1:
                     self.logL = np.array(dead_likes)
+                    self.logX_powerlaw()
+                    self.frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
+                    self.logZ_tester += self.frac
                     cond = self.breaking_criterion()
                     if cond:
                         print(cond)
@@ -75,23 +82,16 @@ class NSrun():
         print(str(self.logZ_tester)+'should be same as'+str(self.logZval))
               
     def breaking_criterion(self):
-        self.logZ_tester=0
         self.logX_powerlaw()
-        logsum_L=logsumexp([self.logL[-1],self.logL[-2]],axis=0)
-        logdiff_X=logsumexp([self.logX[-1],self.logX[-2]],axis=0,b=np.array([-1,1])[:,None])
-        logQ=logsum_L+logdiff_X-np.log(2)
-        logZ__=logsumexp(logQ)
-        print('wills logZ is'+str(logZ__))
-        self.logX_powerlaw()
-        frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
-        self.logZ_tester += frac
+        #print('wills logZ is'+str(logZ__))
+        self.frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
         self.logZval = self.logZ()
-        self.logZ_increment= (frac)/(self.logZval)
-        print('logZ_increment is'+str(self.logZ_increment))
-        print('logZ is'+str(self.logZval))
+        self.logZ_increment= (self.frac)/(self.logZval)
+        #print('logZ_increment is'+str(self.logZ_increment))
+        #print('logZ is'+str(self.logZval))
         if abs(self.logZ_increment)<self.tol:
             self.tolerance_breaks+=1
-            print('consecutive tolerance braeks reached'+str(self.tolerance_breaks))
+           # print('consecutive tolerance braeks reached'+str(self.tolerance_breaks))
             if self.tolerance_breaks>=5:
                 print('we hit 5 consecutive tolerance breaks')
                 return True
