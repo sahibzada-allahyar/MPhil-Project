@@ -20,15 +20,19 @@ def gaussian(x, mu, sig):
 
 
 # sigma_ = 0
-# mh1= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,tol=1e-30)
+# mh1= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,tol=1e-30,multi_samples=1)
 
 # fig,axs=mh1.MCMC2d(parameters=['x0','x1'],label_='deterministic orthodox')
 
-# sigma_=0.25
 
-# for sigma_ in [0.25,20.0,100.0]:    
-#     mh_err= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,tol=1e-35)
-#     mh_err.MCMC2d(parameters=axs,label_='non-deterministic with std error='+str(sigma_))
+# for sigma_ in [2.0]:    
+#     mh_err= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,tol=1e-35,multi_samples=100)
+#     mh_err.MCMC2d(parameters=axs,label_='Multi Sampler with std error='+str(sigma_))
+
+
+# for sigma_ in [.20]:    
+#     mh_err= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,tol=1e-35,multi_samples=1)
+#     mh_err.MCMC2d(parameters=axs,label_='Non-Multi Sampler with std error='+str(sigma_))
 
 
 # handles, labels = axs['x0']['x0'].get_legend_handles_labels()
@@ -63,12 +67,14 @@ def gaussian(x, mu, sig):
 
 
 sigma_ = 0.0
-mh= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,Metropolis=True)
+mh= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,Metropolis=True,multi_samples=1)
 
 fig,axs=mh.MCMC2d(parameters=['x0','x1'],label_='deterministic Metropolis')
 
-for sigma_ in [0.25,20.0,100.0]:    
-    mh2= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True)
+sigma_=2.0
+
+for sigma_ in [2.0,20.0,100.0]:    
+    mh2= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=1)
     mh2.MCMC2d(parameters=axs,label_='non-deterministic Metropolis with std error='+str(sigma_))
 # with std error='+str(sigma_))
 
@@ -85,6 +91,9 @@ for sigma_ in [0.25,20.0,100.0]:
 
 # axs['x1']['x1'].plot(x,y,color='purple')
     
+#  console 7 is running A=1 and 50 num steps and 100 multi samples
+# console 8 is running A=1 and 4200 step number with 1 multi samples
+# console 6 is running 100 step number and A=300 and 100 multi samples
 
 
 handles, labels = axs['x0']['x0'].get_legend_handles_labels()

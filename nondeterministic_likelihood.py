@@ -25,37 +25,37 @@ nlive=125
 m_true = 1
 c_true = 0.5
 sigma = 0.1
-N = 100
+N = 100000
 
-# def f(data_w_noise, theta):
-#      m, c = theta
-#      x = data_w_noise[:,0]
-#      noise = data_w_noise[:,1]
-#      return m * x + c + noise
+def f(data_w_noise, theta):
+      m, c = theta
+      x = data_w_noise[:,0]
+      noise = data_w_noise[:,1]
+      return m * x + c + noise
 
-# def loglikelihood(theta):
-#       m, c = theta
-#       y = m * data_x + c
-#       logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y - y)**2/2/sigma**2).sum()
-#       return logL
-
-
-# def loglikelihood(theta):
-#     number_of_rows= data_noise.shape[0]
-#     random_indices= np.random.choice(number_of_rows,size=N,replace=False)
-#     random_rows = data_noise[random_indices, :]
-#     m, c = theta
-#     data_y_sub = f(random_rows, [m, c])
-#     y1 = m * random_rows[:,0] + c
-#     logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y_sub - y1)**2/2/sigma**2).sum()
-#     return logL
+def loglikelihood(theta):
+      m, c = theta
+      y = m * data_x + c
+      logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y - y)**2/2/sigma**2).sum()
+      return logL
 
 
+def loglikelihood(theta):
+    number_of_rows= data_noise.shape[0]
+    random_indices= np.random.choice(number_of_rows,size=N,replace=False)
+    random_rows = data_noise[random_indices, :]
+    m, c = theta
+    data_y_sub = f(random_rows, [m, c])
+    y1 = m * random_rows[:,0] + c
+    logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y_sub - y1)**2/2/sigma**2).sum()
+    return logL
 
-# data_x = np.random.uniform(-1, 1, N)
-# noise = np.random.randn(N)*sigma
-# data_noise= np.vstack((data_x,noise)).T
-# data_y = f(data_noise, [m_true, c_true])
+
+
+data_x = np.random.uniform(-1, 1, N)
+noise = np.random.randn(N)*sigma
+data_noise= np.vstack((data_x,noise)).T
+data_y = f(data_noise, [m_true, c_true])
 
 def f(x, theta):
       m, c = theta
@@ -75,7 +75,16 @@ def nondet_loglikelihood(theta,Nsub = 10):
      logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y[i] - y)**2/2/sigma**2).sum()
      return logL
 
-
+  
+low=0
+high=2
+live_points = np.random.uniform(low=low, high=high, size=(1000))
+points= np.zeros((len(live_points),2))
+for g in range(len(live_points)):
+    points[g]= [live_points[g],0]
+y=np.zeros(len(live_points))
+y = np.array([nondet_loglikelihood(x,Nsub=1000) for x in points])
+plt.scatter(points.T[0],y)
 
 def ns_sim_mh(logL, sub, ndims=2, nlive=125, num_repeats=10):
     """Metropolis Hastings Nested Sampling run"""
