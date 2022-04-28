@@ -73,9 +73,18 @@ fig,axs=mh.MCMC2d(parameters=['x0','x1'],label_='deterministic Metropolis')
 
 sigma_=2.0
 
-for sigma_ in [2.0,20.0,100.0]:    
+for sigma_ in [2.0]:    
     mh2= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=1)
     mh2.MCMC2d(parameters=axs,label_='non-deterministic Metropolis with std error='+str(sigma_))
+    
+sigma_=20    
+
+for sigma_ in [20.0]:    
+    mh3= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=100)
+    mh3.MCMC2d(parameters=axs,label_='non-deterministic Metropolis with std error='+str(sigma_))
+
+
+
 # with std error='+str(sigma_))
 
 
