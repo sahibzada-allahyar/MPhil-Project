@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May  6 01:31:02 2022
+
+@author: sahibzadaallahyar
+"""
+
+import numpy as np
+from anesthetic import MCMCSamples, NestedSamples
+import tqdm
+import matplotlib.pyplot as plt
+from scipy.stats import multivariate_normal
+import sys
+from scipy.stats import powerlaw
+from scipy.special import logsumexp
+
+
+
+class NSrun():
+    def __init__(self,loglikelihood,prior_bounds, ndims=2, nlive=100,Metropolis=False,num_repeats=100, tol=1e-10,multi_samples=1):
+        """orthodox Nested Sampling run"""
+        self.ndims = ndims
+        self.columns = ['x%i' % i for i in range(ndims)]
+        self.tex = {p: '$x_%i$' % i  for i, p in enumerate(self.columns)}
+        self.nlive=nlive
+        self.loglikelihood=loglikelihood
+        self.multi_samples=multi_samples
+        self.tolerance_breaks=0
+        self.tol= tol
+        self.Z_tester=0
+        print('tolerance chosen as'+str(self.tol))
+        low= prior_bounds[0]
+        high=prior_bounds[1]
+        live_points = np.random.uniform(low=low, high=high, size=(nlive, ndims))
+        live_likes = np.array([self.multi_sampler(loglikelihood_=self.loglikelihood,x=k) for k in live_points])
+        live_birth_likes = np.ones(nlive) * -np.inf
+        dead_points = []
+        dead_likes = []
+        birth_likes = []
+        _= 0
+        if Metropolis:
+            while True:
+                i = np.argmin(live_likes)
+                Lmin = live_likes[i]
+                dead_points.append(live_points[i].copy())
+                dead_likes.append(live_likes[i])
+                birth_likes.append(live_birth_likes[i])
+                live_birth_likes[i] = Lmin
+                j= np.random.randint(low=0, high= len(live_points))
+                wandering_point= live_points[j]
+                for gg in range(num_repeats):
+                    while True:
+                        live_point = wandering_point+np.random.multivariate_normal(mean=np.zeros(len(live_points[0])), cov=np.cov(live_points.T)/300)
+                        if self.multi_sampler(loglikelihood_=self.loglikelihood,x=live_point)> Lmin and np.all([live_point>low,live_point<high]):
+                            break
+                    wandering_point = live_point
+                """Below we check if breaking criterion is met"""
+                if _>=1:
+                    self.logL = np.array(dead_likes)
+                    self.logX_powerlaw()
+                    self.frac= 0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1]))
+                    self.Z_tester += self.frac
+                    cond = self.breaking_criterion()
+                    if cond:
+                        print(cond)
+                        break
+                live_points[i, :] = live_point
+                live_likes[i] = self.multi_sampler(loglikelihood_=self.loglikelihood,x=live_points[i]) 
+                _ +=1
+            print('random walk steps are'+str(num_repeats))
+        else:
+            while True:
+                i = np.argmin(live_likes)
+                Lmin = live_likes[i]
+                dead_points.append(live_points[i].copy())
+                dead_likes.append(live_likes[i])
+                birth_likes.append(live_birth_likes[i])
+                live_birth_likes[i] = Lmin
+                while live_likes[i] <= Lmin:
+                    live_points[i, :] = np.random.uniform(low=low, high=high, size=ndims) 
+                    live_likes[i] = self.multi_sampler(loglikelihood_=self.loglikelihood,x=live_points[i])
+                """Below we check if breaking criterion is met"""
+                if _>=1:
+                    self.logL = np.array(dead_likes)
+                    self.logX_powerlaw()
+                    self.frac= 0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1]))
+                    self.Z_tester += self.frac
+                    cond = self.breaking_criterion()
+                    if cond:
+                        print(cond)
+                        break
+                _ +=1
+        self.data, self.logL, self.logL_birth, self.live, self.live_logL, self.live_logL_birth =  np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
+        self.Zval = np.exp(self.logZ())
+        print(str(np.log(self.Z_tester))+'should be same as'+str(self.Zval))
+              
+    def breaking_criterion(self):
+        self.logX_powerlaw()
+        #print('wills logZ is'+str(logZ__))
+        self.frac= 0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1]))
+        self.Zval = np.exp(self.logZ())
+        self.Z_increment= (self.frac)/(self.Zval)
+        #print('Z_increment is'+str(self.Z_increment))
+        #print('Z is'+str(self.Zval))
+        if abs(self.Z_increment)<self.tol:
+            self.tolerance_breaks+=1
+            print('consecutive tolerance breaks reached'+str(self.tolerance_breaks))
+            if self.tolerance_breaks>=5:
+                print('we hit 5 consecutive tolerance breaks')
+                return True
+            else:
+                return False
+        else:
+            self.tolerance_breaks=0
+            return False
+            
+    def multi_sampler(self,loglikelihood_,x):
+        avg_val = np.mean([self.loglikelihood(x) for u in range(self.multi_samples)])
+        return avg_val
+        
+        
+            
+    def logX_powerlaw(self):
+        self.ndead = len(self.logL)
+        t = powerlaw(self.nlive).rvs(self.ndead)
+        self.logX = np.log(t).cumsum()
+        return self.logX
+    
+    
+    def logZ_int(self,reps):
+        self.MHns = NestedSamples(data=self.data, columns=self.columns, logL=self.logL, logL_birth=self.logL_birth, tex=self.tex)
+        return self.MHns.logZ(reps)
+        
+    
+    def logZ(self):
+        self.logX_powerlaw()
+        logsum_L=logsumexp([self.logL[1:],self.logL[:-1]],axis=0)
+        logdiff_X=logsumexp([self.logX[1:],self.logX[:-1]],axis=0,b=np.array([-1,1])[:,None])
+        logQ=logsum_L+logdiff_X-np.log(2)
+        logZ=logsumexp(logQ)
+        return logZ
+    
+    def logp(self,logL,logX_):
+        logX = np.concatenate((0,logX_,-np.inf),axis=None)
+        logdiff_X=logsumexp([logX[2:],logX[:-2]],axis=0,b=np.array([-1,1])[:,None])
+        logp=logL+logdiff_X-np.log(2)
+        return logp-logsumexp(logp)
+    
+    def NS2d(self,parameters,label_):
+        self.MHns = NestedSamples(data=self.data, columns=self.columns, logL=self.logL, logL_birth=self.logL_birth, tex=self.tex)
+        return self.MHns.plot_2d(parameters,alpha=0.5,label=label_)
+    
+    def MCMC2d(self,parameters,label_):
+        self.weights=np.exp(self.logp(self.logL,self.logX_powerlaw()))
+        self.MCMC = MCMCSamples(data=self.data, columns=self.columns, logL=self.logL, weights=self.weights, tex=self.tex)
+        return self.MCMC.plot_2d(parameters,alpha = 0.5,label=label_)
+    
+    def MCMCstd(self):
+        self.weights=np.exp(self.logp(self.logL,self.logX_powerlaw()))
+        self.MCMC = MCMCSamples(data=self.data, columns=self.columns, logL=self.logL, weights=self.weights, tex=self.tex)
+        return self.MCMC['x0'].std()
+

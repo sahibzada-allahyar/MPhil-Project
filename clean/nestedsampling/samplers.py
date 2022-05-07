@@ -160,7 +160,7 @@ class NSrun():
         self.multi_samples=multi_samples
         self.tolerance_breaks=0
         self.tol= tol
-        self.logZ_tester=0
+        self.Z_tester=0
         print('tolerance chosen abdjvhbbhewvhibvibiewbs'+str(self.tol))
         low= prior_bounds[0]
         high=prior_bounds[1]
@@ -190,8 +190,8 @@ class NSrun():
                 if _>=1:
                     self.logL = np.array(dead_likes)
                     self.logX_powerlaw()
-                    self.frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
-                    self.logZ_tester += self.frac
+                    self.frac= 0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1]))
+                    self.Z_tester += self.frac
                     cond = self.breaking_criterion()
                     if cond:
                         print(cond)
@@ -214,26 +214,27 @@ class NSrun():
                 if _>=1:
                     self.logL = np.array(dead_likes)
                     self.logX_powerlaw()
-                    self.frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
-                    self.logZ_tester += self.frac
+                    self.frac= 0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1]))
+                    self.Z_tester += self.frac
                     cond = self.breaking_criterion()
                     if cond:
                         print(cond)
                         break
         self.data, self.logL, self.logL_birth, self.live, self.live_logL, self.live_logL_birth =  np.array(dead_points), np.array(dead_likes), np.array(birth_likes), live_points, live_likes, live_birth_likes
-        print(str(self.logZ_tester)+'should be same as'+str(self.logZval))
+        self.Zval = np.exp(self.logZ())
+        print(str(np.log(self.Z_tester))+'should be same as'+str(self.Zval))
               
     def breaking_criterion(self):
         self.logX_powerlaw()
         #print('wills logZ is'+str(logZ__))
-        self.frac= np.log(0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1])))
-        self.logZval = self.logZ()
-        self.logZ_increment= (self.frac)/(self.logZval)
-        #print('logZ_increment is'+str(self.logZ_increment))
-        #print('logZ is'+str(self.logZval))
-        if abs(self.logZ_increment)<self.tol:
+        self.frac= 0.5*(np.exp(self.logL[-1])+np.exp(self.logL[-2]))*(np.exp(self.logX[-2])-np.exp(self.logX[-1]))
+        self.Zval = np.exp(self.logZ())
+        self.Z_increment= (self.frac)/(self.Zval)
+        #print('Z_increment is'+str(self.Z_increment))
+        #print('Z is'+str(self.Zval))
+        if abs(self.Z_increment)<self.tol:
             self.tolerance_breaks+=1
-            # print('consecutive tolerance braeks reached'+str(self.tolerance_breaks))
+            print('consecutive tolerance breaks reached'+str(self.tolerance_breaks))
             if self.tolerance_breaks>=5:
                 print('we hit 5 consecutive tolerance breaks')
                 return True

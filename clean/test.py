@@ -1,4 +1,4 @@
-from nestedsampling.samplers import NSrun
+from nestedsamplingbreak.samplers import NSrun
 import numpy as np
 from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
@@ -19,10 +19,10 @@ def gaussian(x, mu, sig):
     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))/(sig*np.sqrt(2*np.pi))
 
 
-# sigma_ = 0
-# mh1= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,tol=1e-30,multi_samples=1)
+sigma_ = 0
+mh1= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,tol=1e-7,multi_samples=1)
 
-# fig,axs=mh1.MCMC2d(parameters=['x0','x1'],label_='deterministic orthodox')
+fig,axs=mh1.MCMC2d(parameters=['x0','x1'],label_='deterministic orthodox')
 
 
 # for sigma_ in [2.0]:    
@@ -66,22 +66,22 @@ def gaussian(x, mu, sig):
 '''%Metropolis hastings below'''
 
 
-sigma_ = 0.0
-mh= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,Metropolis=True,multi_samples=1)
+# sigma_ = 0.0
+# mh= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0],[1,1]],ndims=2,Metropolis=True,multi_samples=1)
 
-fig,axs=mh.MCMC2d(parameters=['x0','x1'],label_='deterministic Metropolis')
+# fig,axs=mh.MCMC2d(parameters=['x0','x1'],label_='deterministic Metropolis')
 
-sigma_=2.0
+# sigma_=2.0
 
-for sigma_ in [2.0]:    
-    mh2= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=1)
+for sigma_ in [0]:    
+    mh2= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=1,tol=1e-9,num_repeats= 100)
     mh2.MCMC2d(parameters=axs,label_='non-deterministic Metropolis with std error='+str(sigma_))
     
-sigma_=20    
+# sigma_=20    
 
-for sigma_ in [20.0]:    
-    mh3= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=100)
-    mh3.MCMC2d(parameters=axs,label_='non-deterministic Metropolis with std error='+str(sigma_))
+# for sigma_ in [20.0]:    
+#     mh3= NSrun(loglikelihood=loglikelihood,prior_bounds=[[0,0], [1,1]], ndims=2,Metropolis=True,multi_samples=100)
+#     mh3.MCMC2d(parameters=axs,label_='non-deterministic Metropolis with std error='+str(sigma_))
 
 
 
