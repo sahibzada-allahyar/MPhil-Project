@@ -1,0 +1,178 @@
+%!TEX root = ../thesis.tex
+%*******************************************************************************
+%*********************************** First Chapter *****************************
+%*******************************************************************************
+
+\chapter{Introduction}\label{ch:chapter1}  %Title of the First Chapter
+
+\ifpdf
+    \graphicspath{{Chapter1/Figs/Raster/}{Chapter1/Figs/PDF/}{Chapter1/Figs/}}
+\else
+    \graphicspath{{Chapter1/Figs/Vector/}{Chapter1/Figs/}}
+\fi
+
+
+
+%********************************** %First Section  **************************************
+
+\section{Review of Literature and Applications of Nested Sampling}
+Since its creation 16 years ago by John Skilling~\cite{10.1214/06-BA127}, the nested sampling algorithm has been extensively used in cosmology as the main tool for testing possible models of the universe~\cite{Trotta_2008}. Moreover, it also has widespread applications in gravitational-wave astronomy, particle physics, and materials science. Recently, nested sampling has even shown potential in the realms of Bayesian Neural Networks~\cite{https://doi.org/10.48550/arxiv.2205.11151}--a topic of relevance in cutting-edge machine learning~\cite{https://doi.org/10.48550/arxiv.1801.07710}.
+
+A full discussion of nested sampling in cosmology, including in several of its core results, is beyond the scope of an MPhil thesis introduction~\cite{Ashton_2022}; an early example of this is Ref~\cite{Martin_2011} using nested sampling to evaluate which of the 193 inflationary models best fit the available cosmological data (such as CMB data from WMAP~\cite{Spergel_2003}).  Nested sampling is also consistently implemented in the modelling of galaxy clusters~\cite{Allen_2002,Allen_2011}. It has also been used in the context of measuring the expansion of the universe. To measure the expansion history of the universe one must estimate cosmological parameters. Historically, these cosmological parameters have been estimated through observations of SNIa light curves, utilising a $\chi^2$ approach (example case is ref \cite{Conley_2010}). Ref \cite{10.1111/j.1365-2966.2011.19584.x} used nested sampling to show that their Bayesian approach reduced statistical bias by approximately $2-3$ times compared to the standard $\chi^2$ approach. Nested sampling was also utilised in reconstructions of the dark energy equation of state~\cite{Zhao_2017,Hee_2016}, astronomical sparse reconstruction~\cite{Higson_2018}, and it was central in the REACH 21cm cosmology analysis~\cite{Anstey_2021}. It has also been used in exoplanet analyses~\cite{Hall_2018,Ahrer_2021}. Gravitational waves were first observed in 2015 by the LIGO and Virgo interferometers~\cite{2015,Acernese_2014}. However nested sampling can also be used for gravitational wave discovery using simple photometric observations of stars~\cite{Mihaylov_2020}. This paper, ref \cite{Mihaylov_2020}, is also the main focus of \cref{ch:chapter4} of this thesis. 
+
+
+Particle physics is another highly data-intensive field. Thus, there is room within this field for the application of Bayesian inference techniques such as nested sampling and MCMC methods. One example case of this would be the nested sampling package called SuperBayeS~\cite{Feroz_2011,Austri_2006,Trotta_2008} that was used in several LHC predictions such as the early LHC analysis in ref \cite{Trotta_2011}. Nested sampling can also be applied to sampling space to efficiently compute small $p$-values used in the discovery of new particles in the LHC~\cite{Fowlie_2022}. However, there is far more potential for nested sampling applications in this field than has been explored. Thus, we look forward to seeing how the nested sampling literature develops in the context of particle physics. In the realms of materials science, nested sampling has, for one, been utilised in characterizing model systems such as Lennard-Jones potential~\cite{Baldock_2016,wilson_gelb_nielsen_2015} and Jagla potential~\cite{Bart_k_2021}. These were just a small subset of the varied applications of nested sampling across all physical sciences. 
+
+An open problem that permeates the field of machine learning is the lack of explainability of neural networks (NNs). In general, deep learning neural networks are a `black box'--that is, it is not possible to quantify exactly how the nodes and parameters are interacting. The errors on the outcome of usual neural networks are unsophisticated, and the errors uncertain themselves. However, Bayesian Neural Networks generate a complete posterior distribution and give probabilistic guarantees on the neural network outputs. This grants us a better understanding of the interactions between the different parameters generating the data; this, in turn, brings us closer to the explainability of NNs~\cite{https://doi.org/10.48550/arxiv.1801.07710}. Additionally, having probabilistic guarantees on outputs is important for safety precautions when employing NNs in high-risk scenarios such as cancer screenings, security footage, heart scans, hurricane prediction etc. With better error prediction we would more efficiently invoke human input and prevent catastrophes. Now that we have put the applications of nested sampling into broader context, let us begin work towards introducing it explicitly. However, to do this we must first introduce general Bayesian statistics.
+
+
+\section{Background on Bayesian Statistics} %Section - 1.1 
+
+Bayesian inference has established itself as the de facto tool in astrophysical data analysis. Whilst it is more widely applicable to fields as diverse as predictive models of the stock market \& machine learning models for protein folding predictions (Bayesian methods are becoming increasingly adopted at the cutting edge of research taking place in these fields~\cite{https://doi.org/10.48550/arxiv.1010.4735, Ding2015DeepLF,neal_1996,MacKay1996,KristineBeck-2012}), Bayesian methods have become especially relevant in precision cosmology due to the explosion in size of the latest data surveys. 
+
+To test different theories of the universe, we need to compare different models. Once we choose the model, we estimate its parameters. These schemes are known in the literature as `model comparison' and `parameter estimation' respectively~\cite{Bernardo94}. Since parameter estimation does not need the normalisation of the posterior, the computation of the evidence is not necessary--the evidence being a numerically calculated, high-dimensional integral that Markov-Chain Monte-Carlo (MCMC) methods~\cite{mackay2003information} struggle to compute on a practical timescale~\cite{10.1214/06-BA127}. However, model comparison does require posterior normalisation and thus the calculation of the evidence. This caused a hindrance in the application of Bayesian inference to cosmology and other physics big data problems, until John Skilling introduced nested sampling~\cite{10.1214/06-BA127}. Since then, the nested sampling packages, \texttt{MultiNest} (Farhan Feroz et al., 2009)~\cite{Feroz_2009} and \texttt{PolyChord} (Will Handley et al., 2015)~\cite{Handley_2015}, have been widely adopted by the scientific community working on cosmology.
+
+
+Given some data, $D$, and a model, $M$, we can write the probability of the model having parameters, $\theta$, as:
+%
+\begin{align}
+    P(\theta|D, M_k) &= \frac{P(D|\theta,M)P(\theta|M)}{P(D|M)},
+\label{eq:bayes}\\
+    &= \frac{L \pi}{Z}.
+\end{align}
+%
+This is known as Bayes' theorem. Here, $P(\theta|D, M)= \mathcal{P}$ is known as the posterior, $P(D|\theta,M)=L$ is the likelihood, $P(\theta|M)= \pi$ is the prior, and $P(D|M)=Z$ is the evidence. If we choose to marginalise the likelihood $P(D|\theta,M)=L$, then we get the marginal likelihood, which is also known as the evidence:
+%
+\begin{equation}
+    Z = \int P(D|\theta,M)P(\theta|M) d \theta = \int L(\theta) \pi(\theta) d \theta =P(D|M).
+\label{eq:integ}
+\end{equation}
+%
+%\begin{equation}
+ %   P(M|D, \theta_M) = \frac{P(D|M,theta_M)P(M|theta_M)}{P(D,|\theta_M)},
+%\end{equation}
+Given a set of models, $M= \{ M_1,M_2,... \}$, to test on data, $D$, we have the probability of observing model $k$ as~\cite{Handley_2015} 
+\begin{align}
+    P(M_k|D) &= \frac{P(D|M_k)P(M_k)}{P(D)},
+\label{eq:probb}\\
+ &= \frac{Z_k \pi_k}{\sum_{j}Z_j \pi_j}.
+\label{eq:probbb}
+\end{align}
+%
+This allows us to compare our different theories regarding models that describe the data. The model with the largest value for \cref{eq:probb} is the one that best fits the data and should be chosen. Generally, the values of the priors, $\pi_k$, are all chosen to be equal and constant for all the models. Thus, considering \cref{eq:probbb}, the only thing we need to know to decide the best-fit model is the largest evidence $Z$. As previously discussed, this evidence calculation requires the use of nested sampling as MCMC methods are too inefficient for this task, since evidence calculation requires the ability to integrate the likelihood over the entire prior, whilst MCMC methods only explore the posterior.
+
+
+Parameter estimation is the other half of Bayesian inference. It is the process by which the posterior probability distribution $\mathcal{P}=P(\theta|D)$ is encapsulated. This can be done using summary statistics, such as a mean and covariance of $\mathcal{P}$, or more generally by drawing a number of representative samples $\theta\sim \mathcal{P}$.  The name of the game therefore in parameter estimation is drawing a representative number of samples from $\mathcal{P}$ with as few calls to the (generally expensive) likelihood $L$ as possible. This is traditionally achieved using MCMC techniques such as Gibbs Sampling, Metropolis Hastings, or Hamiltonian Monte Carlo. Nested sampling is also capable of performing parameter estimation by an appropriate weighting of the dead points. 
+
+\section{Nested Sampling}
+
+Nested sampling~\cite{10.1214/06-BA127} is an algorithm that efficiently evaluates the evidence, $Z$, while simultaneously producing the posterior, $\mathcal{P}$, avoiding the computational curse of dimensionality which afflicts other integrators in high dimensions. Nested sampling utilises a probabilistic relation between the likelihood, $L$, and the prior volume, $X$. The prior volume of the nested sampling algorithm at its $i$th iteration is defined by:
+%
+\begin{align}
+X_i = \int_{L(\theta)> L_i} \pi(\theta)d\theta,
+\label{eq:probabilistic}
+\end{align}
+%
+which is an integral of the prior over the region contained within an iso-likelihood contour, $L(\theta)=L_{i}$. 
+The nested sampling algorithm initiates by sampling $N$ `live points' from the prior distribution $\pi(\theta)$. At the first iteration, $X$ starts at $X_0=1$. At each iteration of the algorithm, the lowest likelihood occupying live point is discarded. At the $i$th iteration of the algorithm, the point with the lowest likelihood, labelled $L_i$, is discarded. These discarded points are referred to as `dead points'. A new point is randomly and uniformly sampled from the prior distribution to replace this discarded point--with the constraint that the new point must satisfy $L(X_{\mathrm{new}})>L_i$. Due to the random and uniform sampling, the prior volume contained within this new iso-likelihood contour is a random variable 
+%
+\begin{equation}
+X_{i+1}=X_{i}t_{i+1}.
+\end{equation}
+%
+Here $t_i$ follows the power law~\cite{Clauset_2009} distribution, 
+\begin{equation}
+P(t_i)=Nt_i^{N-1},
+\end{equation}
+where $t_i$ is the largest of $N$ random numbers sampled from $\texttt{Uniform} (0,1)$. Since it is not possible to evaluate \cref{eq:probabilistic} analytically, due to the generally complicated functional relations between $L$, $X$, and $\theta$, nested sampling comes up with a scheme of approximating this integral in \cref{eq:probabilistic} for each nested sampling iteration. One can simply simulate a set of $t$s randomly generated from a power law distribution. 
+
+The mean and standard deviation of such power law distributed $\log t$ are:
+%
+\begin{equation}
+   E(\log t)= \frac{-1}{N},
+\end{equation}
+%
+\begin{equation}
+   \sigma (\log t)= \frac{1}{N}.
+\end{equation}
+%
+Since the $\log t$ are independent at each iteration, we have that 
+%
+\begin{equation}
+   \log X_i \approx - \frac{i \pm \sqrt{i}}{N}.
+\label{eq:xi}
+\end{equation}
+%
+It is important to note that the expression above in \cref{eq:xi} is completely independent of the value of the likelihood--the only dependence on the likelihood is the ordering. In other words, this same set of simulated $\log X_i$ could be used for any other likelihood distribution to carry out nested sampling. This is something that we expand upon in \cref{ch:chapter2}, in the context of our research into gradient nested sampling. To differentiate other forms of nested sampling, such as Metropolis Hastings nested sampling and gradient nested sampling, we refer to the original rejection-sampling nested sampling algorithm, proposed in the original paper by John Skilling~\cite{10.1214/06-BA127}, as `orthodox nested sampling'. 
+
+
+With the definition of the prior volume \cref{eq:probabilistic}, we may turn the multidimensional integral in \cref{eq:integ} into a single-variable integral:
+%
+\begin{equation}
+    Z = \int^1_0 L(X) dX.
+\label{eq:iteg}
+\end{equation}
+%
+The nested sampling algorithm involves evaluating the integral \cref{eq:iteg} numerically using a weighted sum such as:
+%
+\begin{align}
+Z = \sum_i^M \frac{(L_i+L_{i-1})(X_{i-1}-X_{i})}{2}.
+\end{align}
+%
+Here, $M$ is the number of `dead points' at termination of the nested sampling algorithm. The termination of the algorithm is usually based on the estimated remaining posterior mass crossing a minimum tolerance threshold. There are several ways of doing this, \texttt{PolyChord}~\cite{Handley_2015} does so through:
+%
+\begin{equation}
+    Z_{\mathrm{leftover}} \approx \langle L \rangle_{\mathrm{live}} X_i,
+\end{equation}
+%
+where $\langle L \rangle_{\mathrm{live}}$ is the average taken over the live points. 
+
+Once the algorithm is terminated, the posterior can be generated using the full sequence of dead points. Simply assigning the weight to each point,
+%
+\begin{equation}
+    p_j= \frac{L_j w_j}{Z},
+\end{equation}
+%
+with the index $j$ running from 1 to $(M+N)$, the total number of dead points. This is then used to generate the marginalised posterior distribution plots.
+
+
+With the nested sampling algorithm now introduced, we shall cover the fundamental limitations on it that are subject to further exploration. 
+
+
+\section{Limitations of Nested Sampling}\label{sec:limitations}
+
+\subsection{Accuracy of the Evidence $Z$}\label{sec:evidence_accuracy}
+
+Given the centrality of model comparison in science, and the fact that nested sampling represents the state of the art in numerically computing Bayes' factors, it is unfortunate that nested sampling typically has error bars in log evidence of order unity. This error arises from the probabilistic estimation of the prior volumes, where a Poisson-like error in each contraction accumulates in the compression of live points from prior to posterior . 
+
+
+
+\subsection{Size of data}\label{sec:size_of_data}
+
+Efficient and faster sampling is one of the main goals in cutting-edge machine learning research and data intensive science. Datasets involved in cosmology and the machine learning industry are often large to the extent that utilising all of the data points at each sampling step becomes computationally intractable. Subsampling the data solves the issue of computational intractability but introduces a fresh problem of non-determinism in nested sampling. We know from our understanding of the nested sampling algorithm that we guide our exploration of the parameter space by sampling the likelihood at each iteration and accept or reject points based on them satisfying the acceptance criteria. If we utilise random subsampling of the data, then the likelihood will generate different values for the same point in parameter-space. This causes major problems in nested sampling as we will explore in \cref{ch:chapter3}.
+
+
+
+Non-deterministic likelihoods have not been dealt with yet within the cosmology literature. Non-deterministic likelihoods have been avoided due to the non-compatibility with non-determinism of the most widely used nested sampling packages--\texttt{MultiNest} and \texttt{PolyChord}. For example, ref \cite{Mihaylov_2020} opts for, significantly more inaccurate, deterministic subsampling over non-deterministic subsampling due to the lack of any work done on non-deterministic nested sampling in the literature.
+
+\section{Contents of Thesis}
+
+This thesis aims to explore possible solutions to two fundamental limitations on nested sampling listed in the \cref{sec:limitations}.
+
+
+\subsection*{\Cref{ch:chapter2}: Gradient Nested Sampling}
+
+
+In \cref{ch:chapter2}, we try to solve the issue related to the accuracy of the evidence from \cref{sec:evidence_accuracy}. We do this by proposing an algorithm we call `gradient nested sampling'. We show preliminary results that suggest gradient nested sampling fundamentally improves the accuracy of the Bayesian evidence computation. These are optimistic as a proof-of-concept but gradient nested sampling needs further exploration where more sophisticated, first-principles solutions should be explored.
+
+\subsection*{\Cref{ch:chapter3}: Subsampling}
+
+In \cref{ch:chapter3} we try to solve the issues, as mentioned in 1.5.2, related to sampling from the large datasets found in modern cosmology. We do this by introducing a method of efficient subsampling using control variates, taken from ref \cite{Quiroz_2018} (Matias Quiroz et al., 2014), and implement it within nested sampling. One of our contributions is in that we introduce this method of efficient subsampling in a format that is digestible and accessible to researchers from a physics or engineering background. We also carry out calculations which strongly suggest that, in the context of nested sampling, non-deterministic subsampling methods are superior to deterministic methods (like the deterministic Voronoi subsampling method used in ref \cite{Mihaylov_2020}). We also explore how to make non-deterministic likelihoods viable for nested sampling, an underexplored topic in the literature.
+
+\subsection*{\Cref{ch:chapter4}: Cosmology Application of Efficient Subsampling}
+
+In \cref{ch:chapter4} we begin work on a cosmology application of the theoretical statistical inference work proposed in \cref{ch:chapter3}. We suggest to adjust the analysis performed in ref \cite{Mihaylov_2020}, but utilising non-deterministic likelihoods in the nested sampling protocol rather than their Voronoi cell deterministic likelihood. As will have been demonstrated in \cref{ch:chapter3} through toy examples, this should return significantly more accurate results.
+
+\subsection*{\Cref{ch:chapter5}: Conclusions}
+
+In chapter \cref{ch:chapter5} we go further in depth into the broader scope of the work done in this thesis. We describe major fields of relevance to the work, namely: stochastic gradient descent, Bayesian Neural Networks, the training of large online networks, and a suggestion of some further work within cosmology.

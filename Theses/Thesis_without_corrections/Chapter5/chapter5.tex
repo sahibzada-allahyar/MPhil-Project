@@ -1,0 +1,50 @@
+%!TEX root = ../thesis.tex
+%*******************************************************************************
+%****************************** Third Chapter **********************************
+%*******************************************************************************
+\chapter{Conclusions and further work}\label{ch:chapter5}
+
+% **************************** Define Graphics Path **************************
+\ifpdf
+    \graphicspath{{Chapter5/Figs/Raster/}{Chapter5/Figs/PDF/}{Chapter5/Figs/}}
+\else
+    \graphicspath{{Chapter5/Figs/Vector/}{Chapter5/Figs/}}
+\fi
+
+\section{Conclusions}
+
+In \cref{sec:limitations} we listed two of the most fundamental limitations on nested sampling: the accuracy of Bayesian evidence calculations and the computational limit on the size of the datasets. The basis of this thesis was to propose methods to overcome these limitations. We found promising results in both methods proposed to tackle these problems. Gradient nested sampling showed preliminary promise in providing a fundamental increase in the core nested sampling algorithm. John Skilling himself predicted such improvements should be possible, given that a `prior on curves' should exist but needs to be found. Additionally, the control variate subsampling scheme we introduced in \cref{ch:chapter3} demonstrated the potential for substantially cutting computational costs over the widespread methods such as simple random sampling (SRS) and averaged-deterministic-subsampling. A further contribution of this thesis is a novel examination of the compatibility of non-deterministic likelihoods with nested sampling. Whilst these are only preliminary results, they provide a promising avenue for future MPhil \& PhD projects. 
+
+\section{Related Work; Big Data, Machine Learning, and Cosmology}
+
+\subsection{Stochastic Gradient Descent}
+
+
+The most extensively employed optimization algorithm in modern machine learning is stochastic gradient descent (SGD). The work on efficient subsampling discussed in \cref{ch:chapter3} is directly applicable to SGD.
+
+SGD involves sampling a subset of the available dataset to approximate the true gradient. The reason for subsampling is computational restrictions. As further work, we are looking to apply the control variate subsampling method introduced in \cref{ch:chapter3} to improve the efficiency of SGD. Another takeaway from \cref{ch:chapter3} that may be analogously applied to SGD is that non-deterministic subsampling is significantly superior to deterministic subsampling in most cases (due to large number of samples cancelling out the biases), so SGD should always utilise non-deterministic subsampling (i.e.\ sample a different subset at each sampling iteration). However, this non-determinism may cause several complications with convergence as we will discover in \cref{ch:chapter3} as well.
+
+
+In \cref{ch:chapter2} we utilise a concept analogous to SGD: in our proposed `gradient nested sampling', we use the stochastically-determined gradient of the likelihood function to guide our choice of the prior volume estimate. A takeaway from \cref{ch:chapter2} that may be analogously applied to SGD is that we found that it is helpful to do a rolling sum of the stochastic gradient over a local region to get a better estimate. This rolling average could be utilised in a SGD algorithm as well.
+
+\subsection{Bayesian Neural Networks Incorporating Nested Sampling.}
+
+
+In Ref~\cite{https://doi.org/10.48550/arxiv.2205.11151} David Yallup, Will Handley et al. apply nested sampling to Bayesian Neural Networks. Further work on this MPhil thesis lay in the realms of applying \cref{ch:chapter2}'s gradient nested sampling to BNNs and utilising \cref{ch:chapter3}'s efficient subsampling in the BNN training.
+
+
+\subsection{Batch/Offline and Online Learning}
+
+Batch/offline learning is a form of deterministic subsampling of data-space. Data accumulated over a certain period of time is used to train a model. For example, data could be updated weekly. The issue with batch learning is that it is costly to retrain data. Whenever the data is updated by the new batch the whole parameter landscape, on which the neural network performs gradient descent is perturbed. This means that much of the previous training is nullified and the NN must thus be retrained. However, this means that the training is done on chunks of deterministic datasets and the datasets are altered in intervals. However, with online learning, the data is updated incrementally in real time. This means that for the duration of the online training, the data is non-deterministic. In \cref{ch:chapter3}, we go in-depth into the pitfalls of deterministic subsampling of data space and how it can be inferior to non-deterministic subsampling. Some of the lessons we learnt could be analogously applied to offline/online learning. For example in relation to dealing with convergence issues related to non-deterministic data and how it could be superior to use online learning--analogously to how non-deterministic subsampling subsampling is shown to be superior in \cref{ch:chapter3}.
+
+
+\subsection{Further Cosmology Work}
+More further work lies in the realms of carrying out a similar Bayesian analysis for measuring redshift, as is outlined for the astrometric deflections in \cref{ch:chapter4}. This is another similar method to extract gravitational waves using star photon measurements. It can be performed by utilising the frequency perturbations of the measured photons. This is mostly accomplished by analysing pulsar timing array datasets like NanoGrav~\cite{McLaughlin_2013}. We did not cover it in this thesis but will quickly go over it since our proposed control variate method would be of relevance in improving pulsar timing array~\cite{ 1975GReGr...6..439E} data analysis accuracy. The redshift would be observed as~\cite{Mihaylov_2020}
+%
+\begin{equation}
+z=\frac{(n^{i} n^{j})}{2(1-\textbf{q} \cdot \textbf{n})}[h_{ij}(E)-h_ij(S)],
+\end{equation}
+%
+This result was derived in Ref~\cite{Mihaylov_2020} using Ref~\cite{KAUFMANN1970}. This can be thought of as an analogous equation to \cref{eq:px,eq:py}. 
+
+Beyond the above considerations, there are potentially endless applications within cosmology of the work done in this thesis. Many analyses in cosmology that utilise Bayesian inference could make use of efficient subsampling and gradient nested sampling's more accurate evidence computation. Whilst the results in this thesis are theoretical and preliminary, and thus require further development, they provide a useful starting point for future research.
