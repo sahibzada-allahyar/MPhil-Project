@@ -67,15 +67,6 @@ data_y = f(data_x, [m_true, c_true]) + np.random.normal(0,sigma,N)
 #the xyz inputs will work perfectly since our previous data covariates were also a column of scalars, now theyre column of vectors
 
 
-# def loglikelihood(theta,coords):
-#       data_x= coords[:,0]
-#       data_y= coords[:,1]
-#       y = f(data_x,theta)
-#       # plt.scatter(data_x,data_y)
-#       logL = -(np.log(2*np.pi*sigma**2)/2 + (data_y - y)**2/2/sigma**2).sum()
-#       # plt.figure(0)
-#       return logL
-
 
 
 def loglikelihoodsimple(theta,n,Nsub):
